@@ -30,3 +30,9 @@ for (i in seq_along(sp_files)) {
     sp_raster[[i]] = rasterize(temp_poly, world_raster, field = 'occur')
 }
   
+load('./data/raster/sp_raster.Rdata')
+sp_raster_stack <- stack(sp_raster)
+species_richness <- calc(sp_raster_stack, fun = sum, na.rm = T)
+plot(species_richness, add = T)
+
+save(species_richness, file = './data/raster/species_richness.Rdata')
