@@ -5,7 +5,7 @@ library(maptools)
 library(raster)
 
 # read in the ocean
-oceans <- readOGR(dsn = "C:/Users/Emmaline/Documents/sharkbiogeography", layer = "ne_10m_ocean")
+oceans <- readOGR(dsn = "./data/Environment", layer = "ne_10m_ocean")
 
 # create a global raster layer
 oceans <- spTransform(oceans, CRS("+proj=cea +units=km"))
@@ -63,5 +63,15 @@ indx <- which.max(species_richness)
 pos <- xyFromCell(species_richness, indx)
 pos
 
+# read in a .gz file for temperature
+untar('./data/polygon/temperature.gz', compressed = "gzip")
+temp <- readOGR(dsn = ".", layer = "woa13_decav_t00mn01v2")
 
+# create a temperature raster
+proj4string(temp) <- "+proj=cea +units=km"
+names(temp)
+head(temp$SURFACE)
+temp_raster <- rasterize(temp, oceans_raster, 'SURFACE')
+res(temp_raster) <- 110
+plot(temp_raster)
 
