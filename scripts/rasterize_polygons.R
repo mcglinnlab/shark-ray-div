@@ -27,13 +27,12 @@ for (i in seq_along(factor_val)) {
 
 # raster species polygons
 sp_files <- dir('./data/polygon')
-sp_files_test <- head(sp_files)
-sp_raster <- vector("list", length = length(sp_files_test))
+sp_raster <- vector("list", length = length(sp_files))
 raster_res_list <- vector("list", length = length(res_list))
 for (j in seq_along(res_list)) {
-     for (i in seq_along(sp_files_test)) {
+     for (i in seq_along(sp_files)) {
           # read in 
-          temp_poly = readOGR(dsn = paste("./data/polygon/", sp_files_test[i], 
+          temp_poly = readOGR(dsn = paste("./data/polygon/", sp_files[i], 
                                           sep=''), layer = "OGRGeoJSON")
           # convert projection to cea
           temp_poly = spTransform(temp_poly, CRS("+proj=cea +units=km"))
