@@ -45,6 +45,7 @@ for (j in seq_along(res_list)) {
 }
   
 save(raster_res_list, file = './data/raster/raster_res_list.Rdata')
+load('./data/raster/raster_res_list.Rdata')
 
 # creating a species richness layer for each resolution
 species_richness_list <- vector("list", length = length(raster_res_list))
@@ -63,15 +64,19 @@ indx <- which.max(species_richness)
 pos <- xyFromCell(species_richness, indx)
 pos
 
-# read in a .gz file for temperature
-untar('./data/polygon/temperature.gz', compressed = "gzip")
-temp <- readOGR(dsn = ".", layer = "woa13_decav_t00mn01v2")
-
 # create a temperature raster
-proj4string(temp) <- "+proj=cea +units=km"
+temp <- read.csv('./data/Environment/temp.csv')
+head(temp)
+temp$Meandepth <- rowMeans(temp[,3:87], na.rm = TRUE)
 names(temp)
-head(temp$SURFACE)
-temp_raster <- rasterize(temp, oceans_raster, 'SURFACE')
-res(temp_raster) <- 110
+class(temp)
+coordinates(temp) <- ~LONGITUDE + LATITUDE
+class(temp)
+proj4string(temp) <- "+proj=longlat +datum=WGS84"
+temp <- spTransform(temp, CRS("+proj=cea +units=km"))
+temp_raster <- rasterize(temp, oceans_raster, 'Meandepth')
 plot(temp_raster)
+plot(oceans, add = T)
+
+
 
