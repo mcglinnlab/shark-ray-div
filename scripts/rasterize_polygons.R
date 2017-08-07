@@ -74,9 +74,13 @@ coordinates(temp) <- ~LONGITUDE + LATITUDE
 class(temp)
 proj4string(temp) <- "+proj=longlat +datum=WGS84"
 temp <- spTransform(temp, CRS("+proj=cea +units=km"))
-temp_raster <- rasterize(temp, oceans_raster, 'Meandepth')
-plot(temp_raster)
-plot(oceans, add = T)
+temp_list <- vector("list", length = length(res_list))
+for (i in seq_along(res_list)) {
+     temp_raster <- rasterize(temp, res_list[[i]], 'Meandepth')
+     plot(temp_raster)
+     plot(oceans, add = T)
+     temp_list[[i]] <- temp_raster
+}
 
 
 
