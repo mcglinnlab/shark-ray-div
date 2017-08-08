@@ -4,22 +4,22 @@ library(maps)
 library(maptools)
 library(raster)
 
+# read in the ocean
+oceans <- readOGR(dsn = "./data/Environment", layer = "ne_10m_ocean")
+
 # create a global raster layer
-world <- map(database = "world", fill =T)
-world <- map2SpatialPolygons(world, IDs = world$names, 
-                             CRS("+proj=longlat +datum=WGS84"))
-world <- spTransform(world, CRS("+proj=cea +units=km"))
-plot(world)
-world_raster <- raster(world)
-res(world_raster) <- 110
+oceans <- spTransform(oceans, CRS("+proj=cea +units=km"))
+plot(oceans)
+oceans_raster <- raster(oceans)
+res(oceans_raster) <- 110
 
 # saving the world raster grid
-save(world_raster, file = './data/raster/world_raster.Rdata')
+save(oceans_raster, file = './data/raster/oceans_raster.Rdata')
 
 # for loop to change resolution
 factor_val <- c(110, 220, 330, 440, 550, 770, 1100)
 res_list <- vector("list", length = length(factor_val))
-res_list <- lapply(res_list, function(x) world_raster)
+res_list <- lapply(res_list, function(x) oceans_raster)
 for (i in seq_along(factor_val)) {
      # making new resolutions
      res(res_list[[i]]) <- factor_val[i]
@@ -41,10 +41,11 @@ for (j in seq_along(res_list)) {
           # rasterize
           sp_raster[[i]] = rasterize(temp_poly, res_list[[j]], field = 'occur')
      }
-     raster_res_list[j] = lapply(raster_res_list, function(x) sp_raster)
+     raster_res_list[[j]] = sp_raster
 }
   
 save(raster_res_list, file = './data/raster/raster_res_list.Rdata')
+load('./data/raster/raster_res_list.Rdata')
 
 # creating a species richness layer for each resolution
 species_richness_list <- vector("list", length = length(raster_res_list))
@@ -52,9 +53,8 @@ for (i in seq_along(raster_res_list)) {
      sp_raster_stack <- stack(raster_res_list[[i]])
      species_richness <- calc(sp_raster_stack, fun = sum, na.rm = T)
      plot(species_richness)
-     plot(world, add = T)
-     species_richness_list[i] <- lapply(species_richness_list, 
-                                        function(x) species_richness)
+     plot(oceans, add = T)
+     species_richness_list[[i]] <- species_richness
 }
 
 save(species_richness_list, file = './data/raster/species_richness.Rdata')
@@ -63,6 +63,24 @@ save(species_richness_list, file = './data/raster/species_richness.Rdata')
 indx <- which.max(species_richness)
 pos <- xyFromCell(species_richness, indx)
 pos
+
+# create a temperature raster
+temp <- read.csv('./data/Environment/temp.csv')
+head(temp)
+temp$Meandepth <- rowMeans(temp[,3:87], na.rm = TRUE)
+names(temp)
+class(temp)
+coordinates(temp) <- ~LONGITUDE + LATITUDE
+class(temp)
+proj4string(temp) <- "+proj=longlat +datum=WGS84"
+temp <- spTransform(temp, CRS("+proj=cea +units=km"))
+temp_list <- vector("list", length = length(res_list))
+for (i in seq_along(res_list)) {
+     temp_raster <- rasterize(temp, res_list[[i]], 'Meandepth')
+     plot(temp_raster)
+     plot(oceans, add = T)
+     temp_list[[i]] <- temp_raster
+}
 
 
 
