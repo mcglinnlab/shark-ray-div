@@ -15,14 +15,22 @@ res(oceans_raster) <- 110
 
 # saving the world raster grid
 save(oceans_raster, file = './data/raster/oceans_raster.Rdata')
+load('./data/raster/oceans_raster.Rdata')
 
-# for loop to change resolution
+# for loop to change resolution of oceans_raster
 factor_val <- c(110, 220, 330, 440, 550, 770, 1100)
 res_list <- vector("list", length = length(factor_val))
 res_list <- lapply(res_list, function(x) oceans_raster)
 for (i in seq_along(factor_val)) {
      # making new resolutions
      res(res_list[[i]]) <- factor_val[i]
+}
+
+# for loop to make a mask raster list
+mask_ras_list <- vector("list", length = length(res_list))
+for (i in seq_along(res_list)) {
+     mask_ras <- rasterize(oceans, res_list[[i]], field = 1)
+     mask_ras_list[[i]] <- mask_ras
 }
 
 # raster species polygons
@@ -52,12 +60,14 @@ species_richness_list <- vector("list", length = length(raster_res_list))
 for (i in seq_along(raster_res_list)) {
      sp_raster_stack <- stack(raster_res_list[[i]])
      species_richness <- calc(sp_raster_stack, fun = sum, na.rm = T)
+     species_richness <- mask(species_richness, mask_ras_list[[i]])
      plot(species_richness)
      plot(oceans, add = T)
      species_richness_list[[i]] <- species_richness
 }
 
 save(species_richness_list, file = './data/raster/species_richness.Rdata')
+load('./data/raster/species_richness.Rdata')
 
 # code to find the position of the max value
 indx <- which.max(species_richness)
@@ -76,11 +86,26 @@ proj4string(temp) <- "+proj=longlat +datum=WGS84"
 temp <- spTransform(temp, CRS("+proj=cea +units=km"))
 temp_list <- vector("list", length = length(res_list))
 for (i in seq_along(res_list)) {
-     temp_raster <- rasterize(temp, res_list[[i]], 'Meandepth')
+     temp_raster <- rasterize(temp, res_list[[i]], 'X0')
      plot(temp_raster)
      plot(oceans, add = T)
      temp_list[[i]] <- temp_raster
 }
 
+save(temp_list, file = './data/raster/temp_list.Rdata')
+load('./data/raster/temp_list.Rdata')
 
+# chlorophyll
+chloro <- raster('./data/Environment/MY1DMM_CHLORA_2017-06-01_rgb_360x180.TIFF')
+chloro <- rasterToPolygons(chloro)
+chloro <- spTransform(chloro, CRS("+proj=cea +units=km"))
+chloro_list <- vector("list", length = length(res_list))
+for (i in seq_along(res_list)) {
+     chloro_ras <- rasterize(chloro, res_list[[i]], 
+                             'MY1DMM_CHLORA_2017.06.01_rgb_360x180')
+     values(chloro_ras)[values(chloro_ras) == 255] <- NA
+     plot(chloro_ras)
+     chloro_list[[i]] <- chloro_ras
+}
 
+save(chloro_list, file = './data/raster/chloro_list.Rdata')
