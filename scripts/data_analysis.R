@@ -27,15 +27,49 @@ for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
      print(summary(richnessVchloro_list[[i]]))
 }
 
+# linear regression normal vs threatened
+normalVthreatened_list <- vector("list", length = 7)
+for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
+     plot(values(species_richness_list[[i]]), values(IUCN_richness_list[[i]]), 
+          xlab = "normal", ylab = "threatened")
+     abline(lm(values(IUCN_richness_list[[i]]) ~ 
+                 values(species_richness_list[[i]])), col = 'red')
+     normalVthreatened <- lm(values(IUCN_richness_list[[i]]) ~ 
+                               values(species_richness_list[[i]]))
+     normalVthreatened_list[[i]] <- normalVthreatened
+     print(normalVthreatened_list[[i]])
+}
+
+# experimentation
 stat_stack <- stack(species_richness_list[[1]], temp_list[[1]])
 richnessVtemp <- layerStats(stat_stack, 'pearson', na.rm = T)
-richnessVtemp
-
-richnessVtemp <- cor(values(species_richness_list[[1]]), values(temp_list[[1]]), use = "na.or.complete")
 richnessVtemp
 
 richnessVtemp <- rasterCorrelation(species_richness_list[[1]], temp_list[[1]], s = 3, type = "spearman")
 plot(richnessVtemp)
 
-richnessVchloro <- cor(values(species_richness_list[[1]]), values(chloro), use = "na.or.complete")
-richnessVtemp
+# basic correlation
+richness_temp_list <- vector("list", length = 7)
+for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
+     richnessVtemp_c <- cor(values(species_richness_list[[i]]), 
+                            values(temp_list[[i]]), use = "na.or.complete")
+     richness_temp_list[[i]] <- richnessVtemp_c
+     print(richness_temp_list)
+}
+
+richness_chloro_list <- vector("list", length = 7)
+for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
+     richnessVchloro_c <- cor(values(species_richness_list[[i]]), 
+                              values(chloro_list[[i]]), use = "na.or.complete")
+     richness_chloro_list[[i]] <- richnessVchloro_c
+     print(richness_chloro_list)
+}
+
+normal_threatened_list <- vector("list", length = 7)
+for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
+     normalVthreatened_c <- cor(values(species_richness_list[[i]]), 
+                                values(IUCN_richness_list[[i]]), 
+                                use = "na.or.complete")
+     normal_threatened_list[[i]] <- normalVthreatened_c
+     print(normal_threatened_list)
+}
