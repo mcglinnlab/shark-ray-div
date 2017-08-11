@@ -40,6 +40,19 @@ for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
      print(normalVthreatened_list[[i]])
 }
 
+# latitude vs richness
+latVrichness_list <- vector("list", length = 7)
+for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
+     plot(abs(latitude_list[[i]]), values(species_richness_list[[i]]), 
+          xlab = "latitude", ylab = "richness")
+     abline(lm(values(species_richness_list[[i]]) ~ abs(latitude_list[[i]])), 
+            col = 'red')
+     latVrichness <- lm(values(species_richness_list[[i]]) ~ 
+                          abs(latitude_list[[i]]))
+     latVrichness_list[[i]] <- latVrichness
+     print(latVrichness_list[[i]])
+}
+
 # experimentation
 stat_stack <- stack(species_richness_list[[1]], temp_list[[1]])
 richnessVtemp <- layerStats(stat_stack, 'pearson', na.rm = T)
@@ -54,7 +67,6 @@ for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
      richnessVtemp_c <- cor(values(species_richness_list[[i]]), 
                             values(temp_list[[i]]), use = "na.or.complete")
      richness_temp_list[[i]] <- richnessVtemp_c
-     print(richness_temp_list)
 }
 
 richness_chloro_list <- vector("list", length = 7)
@@ -62,7 +74,6 @@ for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
      richnessVchloro_c <- cor(values(species_richness_list[[i]]), 
                               values(chloro_list[[i]]), use = "na.or.complete")
      richness_chloro_list[[i]] <- richnessVchloro_c
-     print(richness_chloro_list)
 }
 
 normal_threatened_list <- vector("list", length = 7)
@@ -71,5 +82,11 @@ for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
                                 values(IUCN_richness_list[[i]]), 
                                 use = "na.or.complete")
      normal_threatened_list[[i]] <- normalVthreatened_c
-     print(normal_threatened_list)
+}
+
+richness_latitude_list <- vector("list", length = 7)
+for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
+     richnessVlat_c <- cor(values(species_richness_list[[i]]), 
+                           abs(latitude_list[[i]]), use = "na.or.complete")
+     richness_latitude_list[[i]] <- richnessVlat_c
 }

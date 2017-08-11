@@ -143,3 +143,14 @@ for (i in seq_along(IUCN_res_list)) {
 }
 
 save(IUCN_richness_list, file = './data/raster/IUCN_richness_list.Rdata')
+load('./data/raster/IUCN_richness_list.Rdata')
+
+# making a value for latitude
+latitude_list <- vector("list", length = length(res_list))
+for (i in seq_along(res_list)) {
+     oceans_p <- rasterToPoints(res_list[[i]])
+     oceans_p_df <- data.frame(oceans_p)
+     latitude <- oceans_p_df$y
+     latitude_list[[i]] <- latitude
+}
+
