@@ -64,29 +64,32 @@ plot(richnessVtemp)
 # basic correlation
 richness_temp_list <- vector("list", length = 7)
 for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
-     richnessVtemp_c <- cor(values(species_richness_list[[i]]), 
-                            values(temp_list[[i]]), use = "na.or.complete")
+     richnessVtemp_c <- cor.test(values(species_richness_list[[i]]), 
+                            values(temp_list[[i]]), alternative = "two.sided", 
+                            method = "pearson")
      richness_temp_list[[i]] <- richnessVtemp_c
 }
 
 richness_chloro_list <- vector("list", length = 7)
 for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
-     richnessVchloro_c <- cor(values(species_richness_list[[i]]), 
-                              values(chloro_list[[i]]), use = "na.or.complete")
+     richnessVchloro_c <- cor.test(values(species_richness_list[[i]]), 
+                              values(chloro_list[[i]]), 
+                              alternative = "two.sided", method = "pearson")
      richness_chloro_list[[i]] <- richnessVchloro_c
 }
 
 normal_threatened_list <- vector("list", length = 7)
 for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
-     normalVthreatened_c <- cor(values(species_richness_list[[i]]), 
+     normalVthreatened_c <- cor.test(values(species_richness_list[[i]]), 
                                 values(IUCN_richness_list[[i]]), 
-                                use = "na.or.complete")
+                                alternative = "two.sided", method = "pearson")
      normal_threatened_list[[i]] <- normalVthreatened_c
 }
 
 richness_latitude_list <- vector("list", length = 7)
 for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
-     richnessVlat_c <- cor(values(species_richness_list[[i]]), 
-                           abs(latitude_list[[i]]), use = "na.or.complete")
+     richnessVlat_c <- cor.test(values(species_richness_list[[i]]), 
+                           abs(latitude_list[[i]]), alternative = "two.sided", 
+                           method = "pearson")
      richness_latitude_list[[i]] <- richnessVlat_c
 }
