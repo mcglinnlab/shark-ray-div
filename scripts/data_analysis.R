@@ -53,6 +53,19 @@ for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
      print(latVrichness_list[[i]])
 }
 
+# salinity vs richness
+salinityVrichness_list <- vector("list", length = 7)
+for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
+     plot(values(species_richness_list[[i]]), values(salinity_list[[i]]), 
+          xlab = "Shark Richness", ylab = "Salinity")
+     abline(lm(values(salinity_list[[i]]) ~ 
+                 values(species_richness_list[[i]])), col = 'red')
+     salinityVrichness <- lm(values(salinity_list[[i]]) ~ 
+                               values(species_richness_list[[i]]))
+     salinityVrichness_list[[i]] <- salinityVrichness
+     print(salinityVrichness_list[[i]])
+}
+
 # experimentation
 stat_stack <- stack(species_richness_list[[1]], temp_list[[1]])
 richnessVtemp <- layerStats(stat_stack, 'pearson', na.rm = T)
@@ -94,3 +107,12 @@ for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
                            method = "pearson")
      richness_latitude_list[[i]] <- richnessVlat_c
 }
+
+richness_salinity_list <- vector("list", length = 7)
+for (i in seq_along(c(1, 2 ,3 ,4 , 5, 6, 7))) {
+     richnessVsalinity_c <- cor.test(values(species_richness_list[[i]]), 
+                                     values(salinity_list[[i]]), 
+                                     alternative = "two.sided", 
+                                     method = "pearson")
+     richness_salinity_list[[i]] <- richnessVsalinity_c
+} 

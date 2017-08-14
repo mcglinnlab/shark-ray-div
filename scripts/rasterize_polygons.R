@@ -158,3 +158,19 @@ for (i in seq_along(res_list)) {
      latitude_list[[i]] <- latitude
 }
 
+# salinity
+salinity <- read.csv('./data/Environment/salinity.csv')
+salinity$Meandepth <- rowMeans(salinity[,3:86], na.rm = TRUE)
+coordinates(salinity) <- ~ Longitude + Latitude
+proj4string(salinity) <- "+proj=longlat +datum=WGS84"
+salinity <- spTransform(salinity, CRS("+proj=cea +units=km"))
+salinity_list <- vector("list", length = length(res_list))
+for (i in seq_along(res_list)) {
+     salinity_raster <- rasterize(salinity, res_list[[i]], 'Meandepth')
+     salinity_raster <- mask(salinity_raster, mask_ras_list[[i]])
+     plot(salinity_raster)
+     plot(oceans, add = T)
+     salinity_list[[i]] <- salinity_raster
+}
+
+save(salinity_list, file = './data/raster/salinity_list')
