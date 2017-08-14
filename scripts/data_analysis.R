@@ -5,7 +5,7 @@ library(raster)
 richnessVtemp_list <- vector("list", length = 7)
 for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
      plot(values(species_richness_list[[i]]), values(temp_list[[i]]), 
-          xlab = "richness", ylab = "temperature (C)")
+          xlab = "Shark Richness", ylab = "Temperature (°C)")
      abline(lm(values(temp_list[[i]]) ~ values(species_richness_list[[i]])), 
             col = 'red')
      richnessVtemp <- lm(values(temp_list[[i]]) ~ 
@@ -18,7 +18,7 @@ for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
 richnessVchloro_list <- vector("list", length = 7)
 for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
      plot(values(species_richness_list[[i]]), values(chloro_list[[i]]), 
-       xlab = "richness", ylab = "chlorophyll (mg/m^3)")
+       xlab = "Shark Richness", ylab = "Chlorophyll (mg/m^3)")
      abline(lm(values(chloro_list[[i]]) ~ values(species_richness_list[[i]])), 
          col = 'red')
      richnessVchloro <- lm(values(chloro_list[[i]]) ~ 
@@ -31,7 +31,7 @@ for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
 normalVthreatened_list <- vector("list", length = 7)
 for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
      plot(values(species_richness_list[[i]]), values(IUCN_richness_list[[i]]), 
-          xlab = "normal", ylab = "threatened")
+          xlab = "Normal Shark Richness", ylab = "Threatened Shark Richness")
      abline(lm(values(IUCN_richness_list[[i]]) ~ 
                  values(species_richness_list[[i]])), col = 'red')
      normalVthreatened <- lm(values(IUCN_richness_list[[i]]) ~ 
@@ -44,7 +44,7 @@ for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
 latVrichness_list <- vector("list", length = 7)
 for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
      plot(abs(latitude_list[[i]]), values(species_richness_list[[i]]), 
-          xlab = "latitude", ylab = "richness")
+          xlab = "Latitude", ylab = "Shark Richness")
      abline(lm(values(species_richness_list[[i]]) ~ abs(latitude_list[[i]])), 
             col = 'red')
      latVrichness <- lm(values(species_richness_list[[i]]) ~ 
@@ -58,7 +58,8 @@ stat_stack <- stack(species_richness_list[[1]], temp_list[[1]])
 richnessVtemp <- layerStats(stat_stack, 'pearson', na.rm = T)
 richnessVtemp
 
-richnessVtemp <- rasterCorrelation(species_richness_list[[1]], temp_list[[1]], s = 3, type = "spearman")
+richnessVtemp <- rasterCorrelation(species_richness_list[[1]], temp_list[[1]], 
+                                   s = 3, type = "spearman")
 plot(richnessVtemp)
 
 # basic correlation

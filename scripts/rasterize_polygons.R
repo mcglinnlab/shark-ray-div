@@ -86,7 +86,8 @@ proj4string(temp) <- "+proj=longlat +datum=WGS84"
 temp <- spTransform(temp, CRS("+proj=cea +units=km"))
 temp_list <- vector("list", length = length(res_list))
 for (i in seq_along(res_list)) {
-     temp_raster <- rasterize(temp, res_list[[i]], 'X0')
+     temp_raster <- rasterize(temp, res_list[[i]], 'Meandepth')
+     temp_raster <- mask(temp_raster, mask_ras_list[[i]])
      plot(temp_raster)
      plot(oceans, add = T)
      temp_list[[i]] <- temp_raster
@@ -105,10 +106,12 @@ for (i in seq_along(res_list)) {
                              'MY1DMM_CHLORA_2017.06.01_rgb_360x180')
      values(chloro_ras)[values(chloro_ras) == 255] <- NA
      plot(chloro_ras)
+     plot(oceans, add = T)
      chloro_list[[i]] <- chloro_ras
 }
 
 save(chloro_list, file = './data/raster/chloro_list.Rdata')
+load('./data/raster/chloro_list.Rdata')
 
 # IUCN shark species richness
 sp_files_IUCN <- dir('./data/IUCN')
@@ -130,6 +133,7 @@ for (j in seq_along(res_list)) {
 }
 
 save(IUCN_res_list, file = './data/raster/IUCN_res_list.Rdata')
+load('./data/raster/IUCN_res_list.Rdata')
 
 # creating an IUCN richness layer for each resolution
 IUCN_richness_list <- vector("list", length = length(IUCN_res_list))
