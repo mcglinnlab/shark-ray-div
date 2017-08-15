@@ -56,15 +56,17 @@ save(raster_res_list, file = './data/raster/raster_res_list.Rdata')
 load('./data/raster/raster_res_list.Rdata')
 
 # creating a species richness layer for each resolution
+pdf('./figures/species_richness_maps.pdf')
 species_richness_list <- vector("list", length = length(raster_res_list))
 for (i in seq_along(raster_res_list)) {
      sp_raster_stack <- stack(raster_res_list[[i]])
      species_richness <- calc(sp_raster_stack, fun = sum, na.rm = T)
      species_richness <- mask(species_richness, mask_ras_list[[i]])
-     plot(species_richness)
+     plot(species_richness, main=paste('resolution =', res(res_list[[i]])))
      plot(oceans, add = T)
      species_richness_list[[i]] <- species_richness
 }
+dev.off()
 
 save(species_richness_list, file = './data/raster/species_richness.Rdata')
 load('./data/raster/species_richness.Rdata')
@@ -84,14 +86,16 @@ coordinates(temp) <- ~LONGITUDE + LATITUDE
 class(temp)
 proj4string(temp) <- "+proj=longlat +datum=WGS84"
 temp <- spTransform(temp, CRS("+proj=cea +units=km"))
+pdf('./figures/temperature.pdf')
 temp_list <- vector("list", length = length(res_list))
 for (i in seq_along(res_list)) {
      temp_raster <- rasterize(temp, res_list[[i]], 'Meandepth')
      temp_raster <- mask(temp_raster, mask_ras_list[[i]])
-     plot(temp_raster)
+     plot(temp_raster, main = paste('resolution =', res(res_list[[i]])))
      plot(oceans, add = T)
      temp_list[[i]] <- temp_raster
 }
+dev.off()
 
 save(temp_list, file = './data/raster/temp_list.Rdata')
 load('./data/raster/temp_list.Rdata')
@@ -100,15 +104,17 @@ load('./data/raster/temp_list.Rdata')
 chloro <- raster('./data/Environment/MY1DMM_CHLORA_2017-06-01_rgb_360x180.TIFF')
 chloro <- rasterToPolygons(chloro)
 chloro <- spTransform(chloro, CRS("+proj=cea +units=km"))
+pdf('./figures/chlorophyll.pdf')
 chloro_list <- vector("list", length = length(res_list))
 for (i in seq_along(res_list)) {
      chloro_ras <- rasterize(chloro, res_list[[i]], 
                              'MY1DMM_CHLORA_2017.06.01_rgb_360x180')
      values(chloro_ras)[values(chloro_ras) == 255] <- NA
-     plot(chloro_ras)
+     plot(chloro_ras, main = paste('resolution =', res(res_list[[i]])))
      plot(oceans, add = T)
      chloro_list[[i]] <- chloro_ras
 }
+dev.off()
 
 save(chloro_list, file = './data/raster/chloro_list.Rdata')
 load('./data/raster/chloro_list.Rdata')
@@ -136,15 +142,17 @@ save(IUCN_res_list, file = './data/raster/IUCN_res_list.Rdata')
 load('./data/raster/IUCN_res_list.Rdata')
 
 # creating an IUCN richness layer for each resolution
+pdf('./figures/IUCN_richness_maps.pdf')
 IUCN_richness_list <- vector("list", length = length(IUCN_res_list))
 for (i in seq_along(IUCN_res_list)) {
-  sp_raster_stack <- stack(IUCN_res_list[[i]])
-  IUCN_richness <- calc(sp_raster_stack, fun = sum, na.rm = T)
-  IUCN_richness <- mask(IUCN_richness, mask_ras_list[[i]])
-  plot(IUCN_richness)
-  plot(oceans, add = T)
-  IUCN_richness_list[[i]] <- IUCN_richness
+     sp_raster_stack <- stack(IUCN_res_list[[i]])
+     IUCN_richness <- calc(sp_raster_stack, fun = sum, na.rm = T)
+     IUCN_richness <- mask(IUCN_richness, mask_ras_list[[i]])
+     plot(IUCN_richness, main = paste('resolution =', res(res_list[[i]])))
+     plot(oceans, add = T)
+     IUCN_richness_list[[i]] <- IUCN_richness
 }
+dev.off()
 
 save(IUCN_richness_list, file = './data/raster/IUCN_richness_list.Rdata')
 load('./data/raster/IUCN_richness_list.Rdata')
@@ -164,13 +172,15 @@ salinity$Meandepth <- rowMeans(salinity[,3:86], na.rm = TRUE)
 coordinates(salinity) <- ~ Longitude + Latitude
 proj4string(salinity) <- "+proj=longlat +datum=WGS84"
 salinity <- spTransform(salinity, CRS("+proj=cea +units=km"))
+pdf('./figures/salinity.pdf')
 salinity_list <- vector("list", length = length(res_list))
 for (i in seq_along(res_list)) {
      salinity_raster <- rasterize(salinity, res_list[[i]], 'Meandepth')
      salinity_raster <- mask(salinity_raster, mask_ras_list[[i]])
-     plot(salinity_raster)
+     plot(salinity_raster, main = paste('resolution =', res(res_list[[i]])))
      plot(oceans, add = T)
      salinity_list[[i]] <- salinity_raster
 }
+dev.off()
 
 save(salinity_list, file = './data/raster/salinity_list')
