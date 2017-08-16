@@ -81,6 +81,26 @@ for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
 }
 dev.off()
 
+# distance from coast vs richness normal
+pdf('./figures/coast_vs_richness_norm.pdf')
+for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
+     plot(values(coast_distance_list[[i]]), values(species_richness_list[[i]]), 
+          main = paste('resolution =', res(res_list[[i]])), xlab = "Distance", 
+          ylab = "Shark Richness")
+}
+dev.off()
+
+# distance from coast vs richness log
+pdf('./figures/coast_vs_richness_log.pdf')
+for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
+  plot(log(values(coast_distance_list[[i]])), values(species_richness_list[[i]]), 
+       main = paste('resolution =', res(res_list[[i]])), xlab = "Distance", 
+       ylab = "Shark Richness")
+  abline(lm(values(species_richness_list[[i]]) ~ 
+              log(values(coast_distance_list[[i]]))), col = 'red')
+}
+dev.off()
+
 # experimentation
 stat_stack <- stack(species_richness_list[[1]], temp_list[[1]])
 richnessVtemp <- layerStats(stat_stack, 'pearson', na.rm = T)
