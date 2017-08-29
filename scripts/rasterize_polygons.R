@@ -184,3 +184,16 @@ for (i in seq_along(res_list)) {
 dev.off()
 
 save(salinity_list, file = './data/raster/salinity_list')
+
+# distance from coast
+coast_distance_list <- vector("list", length = length(res_list))
+pdf('./figures/distance_from_coast.pdf')
+for (i in seq_along(res_list)) {
+  distance_raster <- setValues(res_list[[i]], 0)
+  distance_raster <- mask(distance_raster, mask_ras_list[[i]], inverse = T)
+  rd <- distance(distance_raster)
+  plot(rd, main = paste('resolution =', res(res_list[[i]])))
+  plot(oceans, add = T)
+  coast_distance_list[[i]] <- rd
+}
+dev.off()
