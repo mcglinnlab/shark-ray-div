@@ -101,6 +101,42 @@ for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
 }
 dev.off()
 
+# taxonomic richness vs faith's pd
+pdf('./figures/richness_vs_pd.pdf')
+for (i in 1:7) {
+  plot(values(pd_raster_list[[i]]), values(species_richness_list[[i]]), 
+       main = paste('resolution =', res(res_list[[i]])), 
+       xlab = "Faith's Phylogentic Diversity", 
+       ylab = "Taxonomic Richness")
+  abline(lm(values(species_richness_list[[i]]) ~ 
+              values(pd_raster_list[[i]])), col = 'red')
+}
+dev.off()
+
+# taxonomic richness vs psv
+pdf('./figures/richness_vs_psv.pdf')
+for (i in 1:7) {
+  plot(values(psv_raster_list[[i]]), values(species_richness_list[[i]]), 
+       main = paste('resolution =', res(res_list[[i]])), 
+       xlab = "PSV", 
+       ylab = "Taxonomic Richness")
+  abline(lm(values(species_richness_list[[i]]) ~ 
+              values(psv_raster_list[[i]])), col = 'red')
+}
+dev.off()
+
+# taxonomic richness vs psr
+pdf('./figures/richness_vs_psr.pdf')
+for (i in 1:7) {
+  plot(values(psr_raster_list[[i]]), values(species_richness_list[[i]]), 
+       main = paste('resolution =', res(res_list[[i]])), 
+       xlab = "PSR", 
+       ylab = "Taxonomic Richness")
+  abline(lm(values(species_richness_list[[i]]) ~ 
+              values(psr_raster_list[[i]])), col = 'red')
+}
+dev.off()
+
 # experimentation
 stat_stack <- stack(species_richness_list[[1]], temp_list[[1]])
 richnessVtemp <- layerStats(stat_stack, 'pearson', na.rm = T)
@@ -151,3 +187,6 @@ for (i in seq_along(c(1, 2 ,3 ,4 , 5, 6, 7))) {
                                      method = "pearson")
      richness_salinity_list[[i]] <- richnessVsalinity_c
 } 
+
+
+
