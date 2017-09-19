@@ -99,6 +99,9 @@ for (i in 1:7) {
 }
 dev.off()
 
+save(pd_raster_list, file = './data/raster/pd_raster_list.Rdata')
+load('./data/raster/pd_raster_list.Rdata')
+
 pdf('./figures/psv_rasters.pdf')
 psv_raster_list <- vector("list", length = 7)
 for (i in 1:7) {
@@ -106,9 +109,12 @@ for (i in 1:7) {
      psv_raster@data@values <- psv_test_list[[i]]$PSVs
      psv_raster <- mask(psv_raster, mask_ras_list[[i]])
      plot(psv_raster)
-     psv_raster_list[[1]] <- psv_raster
+     psv_raster_list[[i]] <- psv_raster
 }
 dev.off()
+
+save(psv_raster_list, file = './data/raster/psv_raster_list.Rdata')
+load('./data/raster/psv_raster_list.Rdata')
 
 pdf('./figures/psr_rasters.pdf')
 psr_raster_list <- vector("list", length = 7)
@@ -117,6 +123,9 @@ for (i in 1:7) {
   psr_raster@data@values <- psr_test_list[[i]]$PSR
   psr_raster <- mask(psr_raster, mask_ras_list[[i]])
   plot(psr_raster)
-  psr_raster_list[[1]] <- psr_raster
+  psr_raster_list[[i]] <- psr_raster
 }
 dev.off()
+
+save(psr_raster_list, file = './data/raster/psr_raster_list.Rdata')
+load('./data/raster/psr_raster_list.Rdata')
