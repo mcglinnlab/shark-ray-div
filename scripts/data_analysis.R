@@ -137,6 +137,30 @@ for (i in 1:7) {
 }
 dev.off()
 
+# taxonomic richness vs random pd
+pdf('./figures/richness_vs_randompd.pdf')
+for (i in 1:7) {
+  plot(values(randompd_raster_list[[i]]), values(species_richness_list[[i]]), 
+       main = paste('resolution =', res(res_list[[i]])), 
+       xlab = "Random PD", 
+       ylab = "Taxonomic Richness")
+  abline(lm(values(species_richness_list[[i]]) ~ 
+              values(randompd_raster_list[[i]])), col = 'red')
+}
+dev.off()
+
+# normal psv vs random psv
+pdf('./figures/normalpsv_vs_randompsv.pdf')
+for (i in 1:7) {
+  plot(values(psv_raster_list[[i]]), values(randompsv_raster_list[[i]]), 
+       main = paste('resolution =', res(res_list[[i]])), 
+       xlab = "Normal PSV", 
+       ylab = "Random PSV")
+  abline(lm(values(randompsv_raster_list[[i]]) ~ 
+              values(psv_raster_list[[i]])), col = 'red')
+}
+dev.off()
+
 # experimentation
 stat_stack <- stack(species_richness_list[[1]], temp_list[[1]])
 richnessVtemp <- layerStats(stat_stack, 'pearson', na.rm = T)

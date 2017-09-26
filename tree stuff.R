@@ -129,3 +129,76 @@ dev.off()
 
 save(psr_raster_list, file = './data/raster/psr_raster_list.Rdata')
 load('./data/raster/psr_raster_list.Rdata')
+
+
+# Tree randomization
+randotree_list <- vector("list", length = 50)
+for (i in 1:50) {
+     randotree <- shark_tree_clean
+     randomtips <- sample(randotree$tip.label, length(randotree$tip.label))
+     randotree$tip.label <- randomtips
+     randotree_list[[i]] <- randotree
+}
+
+# Faith's phylogenetic diversity test
+random_pd_list <- vector("list", length = 7) 
+for (i in 1:7) {
+  pd_test <- pd(mat_list[[i]], randotree_list[[50]])
+  random_pd_list[[i]] <- pd_test
+}
+
+# phylogenetic species diversity metrics
+random_psv_list <- vector("list", length = 7)
+for (i in 1:7) {
+  psv_test <- psv(mat_list[[i]], randotree_list[[50]])
+  random_psv_list[[i]] <- psv_test
+}
+
+random_psr_list <- vector("list", length = 7)
+for (i in 1:7) {
+  psr_test <- psr(mat_list[[i]], randotree_list[[50]])
+  random_psr_list[[i]] <- psr_test
+}
+
+# Random phylogenetic diversity rasters
+pdf('./figures/random_pd_rasters.pdf')
+randompd_raster_list <- vector("list", length = 7)
+for (i in 1:7) {
+  pd_raster <- raster_res_list[[i]][[1]]
+  pd_raster@data@values <- random_pd_list[[i]]$PD
+  pd_raster <- mask(pd_raster, mask_ras_list[[i]])
+  plot(pd_raster)
+  randompd_raster_list[[i]] <- pd_raster
+}
+dev.off()
+
+save(randompd_raster_list, file = './data/raster/randompd_raster_list.Rdata')
+load('./data/raster/randompd_raster_list.Rdata')
+
+pdf('./figures/random_psv_rasters.pdf')
+randompsv_raster_list <- vector("list", length = 7)
+for (i in 1:7) {
+  psv_raster <- raster_res_list[[i]][[1]]
+  psv_raster@data@values <- random_psv_list[[i]]$PSVs
+  psv_raster <- mask(psv_raster, mask_ras_list[[i]])
+  plot(psv_raster)
+  randompsv_raster_list[[i]] <- psv_raster
+}
+dev.off()
+
+save(randompsv_raster_list, file = './data/raster/randompsv_raster_list.Rdata')
+load('./data/raster/randompsv_raster_list.Rdata')
+
+pdf('./figures/random_psr_rasters.pdf')
+randompsr_raster_list <- vector("list", length = 7)
+for (i in 1:7) {
+  psr_raster <- raster_res_list[[i]][[1]]
+  psr_raster@data@values <- random_psr_list[[i]]$PSR
+  psr_raster <- mask(psr_raster, mask_ras_list[[i]])
+  plot(psr_raster)
+  randompsr_raster_list[[i]] <- psr_raster
+}
+dev.off()
+
+save(randompsr_raster_list, file = './data/raster/randompsr_raster_list.Rdata')
+load('./data/raster/randompsr_raster_list.Rdata')
