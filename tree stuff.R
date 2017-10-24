@@ -25,8 +25,21 @@ cf_names <- grep('cf', shark_tree$tip.label, value = T)
 shark_tree_clean <- drop.tip(shark_tree, shark_bin_discard)
 shark_tree_clean$tip.label = sub('cf', '', shark_tree_clean$tip.label)
 sum(species_names_poly %in% shark_tree_clean$tip.label)
-drop_names <- shark_tree_clean$tip.label[!(shark_tree_clean$tip.label %in% species_names_poly)]
+drop_names <- shark_tree_clean$tip.label[!(shark_tree_clean$tip.label 
+                                           %in% species_names_poly)]
 shark_tree_clean <- drop.tip(shark_tree_clean, drop_names)
+
+# averaging duplicates and dropping one set
+duplicate_tips <- which(duplicated(shark_tree_clean$tip.label))
+species <- shark_tree_clean$tip.label[duplicate_tips]
+edge_lengths <- shark_tree_clean$edge.length[duplicate_tips]
+edge_df <- data.frame(species, edge_lengths)
+edge_lengths2 <- shark_tree_clean$edge.length[duplicate_tips-1]
+edge_df[,3] <- edge_lengths2
+avg_edge <- rowMeans(edge_df[,2:3])
+shark_tree_clean$edge.length[duplicate_tips-1] <- avg_edge
+shark_tree_clean <- drop.tip(shark_tree_clean, duplicate_tips)
+
 shark_tree_clean$tip.label
 genus_names <- sapply(strsplit(species_names_poly, ' '), function(x) x[[1]])
 tree_genera <- sapply(strsplit(shark_tree_clean$tip.label, ' '), function(x) x[[1]])
@@ -67,11 +80,43 @@ for (j in 1:7) {
     mat_list[[j]] = ifelse(is.na(mat_list[[j]]), 0, mat_list[[j]])
 }
 
+# Mean root distance
+phylo_bl1 <- compute.brlen(shark_tree_clean, 1)
+all_dist <- dist.nodes(phylo_bl1)
+root_dist <- all_dist[length(shark_tree_clean$tip.label) + 1, 
+                      1:length(shark_tree_clean$tip.label)]
+tips_to_root <- data.frame(spp.name=shark_tree_clean$tip.label, root_dist)
+
+mrd_test_list <- vector("list", length = length(mat_list)) 
+for (i in 1:length(mat_list)) {
+    allspecies = colnames(mat_list[[i]])
+    mrd_test_list[[i]] = rep(0, nrow(mat_list[[i]]))
+    for(j in 1:nrow(mat_list[[i]])) {
+        sp_list = data.frame(spp.name = allspecies[mat_list[[i]][j, ] == 1])
+        if (nrow(sp_list) > 0) {
+            root_dist_tot <- merge(sp_list, tips_to_root, sort = F)
+            mrd_test_list[[i]][j] <- mean(root_dist_tot$root_dist)
+        }
+    }
+}
+
+#MRD rasters
+mrd_raster_list <- vector("list", length = length(raster_res_list))
+pdf('./figures/mrd_rasters.pdf')
+for (i in 1:7) {
+     mrd_raster <- raster_res_list[[i]][[1]]
+     mrd_raster@data@values <- mrd_test_list[[i]]
+     mrd_raster <- mask(mrd_raster, mask_ras_list[[i]])
+     plot(mrd_raster)
+     mrd_raster_list[[i]] <- mrd_raster
+}
+dev.off()
+
 # Faith's phylogenetic diversity test
 pd_test_list <- vector("list", length = 7) 
 for (i in 1:7) {
-  pd_test <- pd(mat_list[[i]], shark_tree_clean)
-  pd_test_list[[i]] <- pd_test
+     pd_test <- pd(mat_list[[i]], shark_tree_clean)
+     pd_test_list[[i]] <- pd_test
 }
 
 # phylogenetic species diversity metrics
@@ -202,3 +247,16 @@ dev.off()
 
 save(randompsr_raster_list, file = './data/raster/randompsr_raster_list.Rdata')
 load('./data/raster/randompsr_raster_list.Rdata')
+
+# computing MRD
+
+
+for (k in 1:7) {
+     species_names_mat <- matrix(NA, ncol = length(species_richness_list[[k]]@data@values))
+     for (j in 1:534)
+          for (i in seq_along(species_richness_list[[k]]@data@values)) {
+               if(raster_res_list[[k]][[j]]@data@values[[i]] %in% species_richness_list[[k]]@data@values[[i]]) {
+               species_names_mat[[i]] <- species_names_poly
+  }
+}
+
