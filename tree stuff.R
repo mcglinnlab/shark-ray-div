@@ -1,6 +1,7 @@
 library(ape)
 library(phytools)
 library(picante)
+library(apTreeshape)
 
 # reading in the tree
 shark_tree <- read.nexus('./data/611_taxa_tree topology for Emmaline.txt')
@@ -47,21 +48,6 @@ sum(unique(genus_names) %in% unique(tree_genera))
 length(unique(genus_names))
 genus_names[!(genus_names %in% tree_genera)]
 
-# rooting the shark tree
-plot(shark_tree_clean, show.tip.label = F)
-identify.phylo(shark_tree_clean)
-is.rooted(shark_tree_clean)
-shark_tree_clean <- root(shark_tree_clean, node = 575, resolve.root = T)
-is.rooted(shark_tree_clean)
-is.binary(shark_tree_clean)
-
-# potential method to make tree ultrmetric
-is.binary.tree(shark_tree_clean)
-attempt_tree <- multi2di(shark_tree)
-is.binary.tree(attempt_tree)
-is.rooted(attempt_tree)
-attempt_tree <- chronopl(attempt_tree, lambda = 0)
-plot(attempt_tree, show.tip.label = F)
 
 # Community matrix for phylogenetic diversity
 test_species <- species_names_poly %in% shark_tree_clean$tip.label
@@ -111,6 +97,9 @@ for (i in 1:7) {
      mrd_raster_list[[i]] <- mrd_raster
 }
 dev.off()
+
+save(mrd_raster_list, file = './data/raster/mrd_raster_list.Rdata')
+load('./data/raster/mrd_raster_list.Rdata')
 
 # Faith's phylogenetic diversity test
 pd_test_list <- vector("list", length = 7) 
@@ -175,6 +164,18 @@ dev.off()
 save(psr_raster_list, file = './data/raster/psr_raster_list.Rdata')
 load('./data/raster/psr_raster_list.Rdata')
 
+# rooting the shark tree
+plot(shark_tree_clean, show.tip.label = F)
+identify.phylo(shark_tree_clean)
+is.rooted(shark_tree_clean)
+shark_tree_clean <- root(shark_tree_clean, outgroup = 257, resolve.root = T)
+is.rooted(shark_tree_clean)
+is.binary(shark_tree_clean)
+shark_tree_clean <- multi2di(shark_tree_clean)
+
+# beta statistic
+sharkb <- maxlik.betasplit(shark_tree_clean)
+sharkb
 
 # Tree randomization
 randotree_list <- vector("list", length = 50)
@@ -248,15 +249,4 @@ dev.off()
 save(randompsr_raster_list, file = './data/raster/randompsr_raster_list.Rdata')
 load('./data/raster/randompsr_raster_list.Rdata')
 
-# computing MRD
-
-
-for (k in 1:7) {
-     species_names_mat <- matrix(NA, ncol = length(species_richness_list[[k]]@data@values))
-     for (j in 1:534)
-          for (i in seq_along(species_richness_list[[k]]@data@values)) {
-               if(raster_res_list[[k]][[j]]@data@values[[i]] %in% species_richness_list[[k]]@data@values[[i]]) {
-               species_names_mat[[i]] <- species_names_poly
-  }
-}
 
