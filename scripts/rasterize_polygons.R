@@ -197,3 +197,5 @@ for (i in seq_along(res_list)) {
   coast_distance_list[[i]] <- rd
 }
 dev.off()
+
+

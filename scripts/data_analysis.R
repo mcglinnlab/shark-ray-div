@@ -3,17 +3,45 @@ library(raster)
 
 # linear regression temp vs richness
 pdf('./figures/temperature_vs_richness.pdf')
-richnessVtemp_list <- vector("list", length = 7)
-for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
+for (i in 1:7) {
      plot(values(temp_list[[i]]), values(species_richness_list[[i]]),
           main = paste('resolution =', res(res_list[[i]])), 
           xlab = "Temperature (°C)", ylab = "Shark Richness")
      abline(lm(values(species_richness_list[[i]]) ~ values(temp_list[[i]])), 
             col = 'red')
-     richnessVtemp <- lm(values(species_richness_list[[i]]) ~ 
-                           values(temp_list[[i]]))
-     richnessVtemp_list[[i]] <- richnessVtemp
-     print(summary(richnessVtemp_list[[i]]))
+}
+dev.off()
+
+# temp vs psv
+pdf('./figures/temperature_vs_psv.pdf')
+for (i in 1:7) {
+  plot(values(temp_list[[i]]), values(psv_raster_list[[i]]),
+       main = paste('resolution =', res(res_list[[i]])), 
+       xlab = "Temperature (°C)", ylab = "Phylogenetic Species Variance (PSV)")
+  abline(lm(values(psv_raster_list[[i]]) ~ values(temp_list[[i]])), 
+         col = 'red')
+}
+dev.off()
+
+# temp vs mrd
+pdf('./figures/temperature_vs_mrd.pdf')
+for (i in 1:7) {
+  plot(values(temp_list[[i]]), values(mrd_raster_list[[i]]),
+       main = paste('resolution =', res(res_list[[i]])), 
+       xlab = "Temperature (°C)", ylab = "mrd")
+  abline(lm(values(mrd_raster_list[[i]]) ~ values(temp_list[[i]])), 
+         col = 'red')
+}
+dev.off()
+
+# temp vs beta
+pdf('./figures/temperature_vs_beta.pdf')
+for (i in 1:7) {
+  plot(values(temp_list[[i]]), values(beta_raster_list[[i]]),
+       main = paste('resolution =', res(res_list[[i]])), 
+       xlab = "Temperature (°C)", ylab = "beta")
+  abline(lm(values(beta_raster_list[[i]]) ~ values(temp_list[[i]])), 
+         col = 'red')
 }
 dev.off()
 
@@ -137,6 +165,18 @@ for (i in 1:7) {
 }
 dev.off()
 
+# MRD vs psv
+pdf('./figures/MRD_vs_psv.pdf')
+for (i in 1:7) {
+  plot(values(psv_raster_list[[i]]), values(mrd_raster_list[[i]]), 
+       main = paste('resolution =', res(res_list[[i]])), 
+       xlab = "Phylogenetic Species Variance (PSV)", 
+       ylab = "Mean Root Distance (MRD)")
+  abline(lm(values(mrd_raster_list[[i]]) ~ 
+              values(psv_raster_list[[i]])), col = 'red')
+}
+dev.off()
+
 # taxonomic richness vs random pd
 pdf('./figures/richness_vs_randompd.pdf')
 for (i in 1:7) {
@@ -158,6 +198,56 @@ for (i in 1:7) {
        ylab = "Random PSV")
   abline(lm(values(randompsv_raster_list[[i]]) ~ 
               values(psv_raster_list[[i]])), col = 'red')
+}
+dev.off()
+
+# MRD vs taxonomic richness
+pdf('./figures/richness_vs_MRD.pdf')
+for (i in 1:7) {
+  values(mrd_raster_list[[i]])[values(mrd_raster_list[[i]]) == 0] <- NA
+  values(species_richness_list[[i]])[values(species_richness_list[[i]]) == 0] <- NA
+  plot(values(mrd_raster_list[[i]]), values(species_richness_list[[i]]), 
+       main = paste('resolution =', res(res_list[[i]])), 
+       xlab = "Mean Root Distance (MRD)", 
+       ylab = "Shark Richness")
+  abline(lm(values(species_richness_list[[i]]) ~ 
+              values(mrd_raster_list[[i]])), col = 'red')
+}
+dev.off()
+
+# chlorophyll_vs_psv
+pdf('./figures/chlorophyll_vs_psv.pdf')
+for (i in 1:7) {
+  plot(values(chloro_list[[i]]), values(psv_raster_list[[i]]), 
+       main = paste('resolution =', res(res_list[[i]])), 
+       xlab = "chlorophyll", 
+       ylab = "psv")
+  abline(lm(values(psv_raster_list[[i]]) ~ 
+              values(chloro_list[[i]])), col = 'red')
+}
+dev.off()
+
+# chlorophyll_vs_mrd
+pdf('./figures/chlorophyll_vs_mrd.pdf')
+for (i in 1:7) {
+  plot(values(chloro_list[[i]]), values(mrd_raster_list[[i]]), 
+       main = paste('resolution =', res(res_list[[i]])), 
+       xlab = "chlorophyll", 
+       ylab = "mrd")
+  abline(lm(values(mrd_raster_list[[i]]) ~ 
+              values(chloro_list[[i]])), col = 'red')
+}
+dev.off()
+
+# chlorophyll_vs_beta
+pdf('./figures/chlorophyll_vs_beta.pdf')
+for (i in 1:7) {
+  plot(values(chloro_list[[i]]), values(beta_raster_list[[i]]), 
+       main = paste('resolution =', res(res_list[[i]])), 
+       xlab = "chlorophyll", 
+       ylab = "beta")
+  abline(lm(values(beta_raster_list[[i]]) ~ 
+              values(chloro_list[[i]])), col = 'red')
 }
 dev.off()
 

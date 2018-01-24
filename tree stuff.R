@@ -143,6 +143,7 @@ for (i in 1:7) {
      psv_raster@data@values <- psv_test_list[[i]]$PSVs
      psv_raster <- mask(psv_raster, mask_ras_list[[i]])
      plot(psv_raster)
+     plot(oceans, add = T)
      psv_raster_list[[i]] <- psv_raster
 }
 dev.off()
@@ -174,8 +175,46 @@ is.binary(shark_tree_clean)
 shark_tree_clean <- multi2di(shark_tree_clean)
 
 # beta statistic
-sharkb <- maxlik.betasplit(shark_tree_clean)
+sharkb <- maxlik.betasplit(shark_tree_clean, confidence.interval = "profile")
 sharkb
+
+i <- 1
+j <- 9783
+
+
+beta_list <- vector("list", length = length(mat_list))
+for (i in 1:length(mat_list)) {
+     allspecies = colnames(mat_list[[i]])
+     beta_list[[i]] = rep(NA, nrow(mat_list[[i]]))
+     for(j in 1:nrow(mat_list[[i]])) {
+         sp_list = data.frame(spp.name = allspecies[mat_list[[i]][j, ] == 1])
+         if (nrow(sp_list) > 1) {
+            drop_these <- shark_tree_clean$tip.label[!(shark_tree_clean$tip.label 
+                                                    %in% sp_list$spp.name)]
+            temp_tree <- drop.tip(shark_tree_clean, drop_these)
+            temp_tree <- multi2di(temp_tree)
+            b <- maxlik.betasplit(temp_tree)
+            beta_list[[i]][j] <- b$max_lik
+         }
+    }
+}
+
+save(beta_list, file = './data/raster/beta_list.Rdata')
+
+#beta rasters
+beta_raster_list <- vector("list", length = length(raster_res_list))
+pdf('./figures/beta_rasters.pdf')
+for (i in 1:7) {
+  beta_raster <- raster_res_list[[i]][[1]]
+  beta_raster@data@values <- beta_list[[i]]
+  beta_raster <- mask(beta_raster, mask_ras_list[[i]])
+  plot(beta_raster)
+  beta_raster_list[[i]] <- beta_raster
+}
+dev.off()
+
+save(beta_raster_list, file = './data/raster/beta_raster_list.Rdata')
+load('./data/raster/beta_raster_list.Rdata')
 
 # Tree randomization
 randotree_list <- vector("list", length = 50)
