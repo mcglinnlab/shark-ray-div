@@ -26,12 +26,20 @@ for (i in seq_along(factor_val)) {
      res(res_list[[i]]) <- factor_val[i]
 }
 
+# making continents polygon
+world <- map(database = "world", fill = T, plot = F)
+continents <- map2SpatialPolygons(world, IDs = world$names, proj4string = CRS("+proj=longlat"))
+continents <- spTransform(continents, CRS("+proj=cea +units=km"))
+
 # for loop to make a mask raster list
 mask_ras_list <- vector("list", length = length(res_list))
 for (i in seq_along(res_list)) {
      mask_ras <- rasterize(oceans, res_list[[i]], field = 1)
      mask_ras_list[[i]] <- mask_ras
 }
+
+# code for using mask:
+# species_richness <- mask(species_richness, mask_ras_list[[i]])
 
 # raster species polygons
 sp_files <- dir('./data/polygon')
@@ -56,14 +64,13 @@ save(raster_res_list, file = './data/raster/raster_res_list.Rdata')
 load('./data/raster/raster_res_list.Rdata')
 
 # creating a species richness layer for each resolution
-pdf('./figures/species_richness_maps.pdf')
+pdf('./figures/species_richness_maps_unmasked.pdf')
 species_richness_list <- vector("list", length = length(raster_res_list))
 for (i in seq_along(raster_res_list)) {
      sp_raster_stack <- stack(raster_res_list[[i]])
      species_richness <- calc(sp_raster_stack, fun = sum, na.rm = T)
-     species_richness <- mask(species_richness, mask_ras_list[[i]])
      plot(species_richness, main=paste('resolution =', res(res_list[[i]])))
-     plot(oceans, add = T)
+     plot(continents, add = T, col = "black")
      species_richness_list[[i]] <- species_richness
 }
 dev.off()
@@ -86,13 +93,12 @@ coordinates(temp) <- ~LONGITUDE + LATITUDE
 class(temp)
 proj4string(temp) <- "+proj=longlat +datum=WGS84"
 temp <- spTransform(temp, CRS("+proj=cea +units=km"))
-pdf('./figures/temperature.pdf')
+pdf('./figures/temperature_unmasked.pdf')
 temp_list <- vector("list", length = length(res_list))
 for (i in seq_along(res_list)) {
      temp_raster <- rasterize(temp, res_list[[i]], 'Meandepth')
-     temp_raster <- mask(temp_raster, mask_ras_list[[i]])
      plot(temp_raster, main = paste('resolution =', res(res_list[[i]])))
-     plot(oceans, add = T)
+     plot(continents, add = T, col = "black")
      temp_list[[i]] <- temp_raster
 }
 dev.off()
@@ -111,7 +117,7 @@ for (i in seq_along(res_list)) {
                              'MY1DMM_CHLORA_2017.06.01_rgb_360x180')
      values(chloro_ras)[values(chloro_ras) == 255] <- NA
      plot(chloro_ras, main = paste('resolution =', res(res_list[[i]])))
-     plot(oceans, add = T)
+     plot(continents, add = T, col = "black")
      chloro_list[[i]] <- chloro_ras
 }
 dev.off()
@@ -142,14 +148,13 @@ save(IUCN_res_list, file = './data/raster/IUCN_res_list.Rdata')
 load('./data/raster/IUCN_res_list.Rdata')
 
 # creating an IUCN richness layer for each resolution
-pdf('./figures/IUCN_richness_maps.pdf')
+pdf('./figures/IUCN_richness_maps_unmasked.pdf')
 IUCN_richness_list <- vector("list", length = length(IUCN_res_list))
 for (i in seq_along(IUCN_res_list)) {
      sp_raster_stack <- stack(IUCN_res_list[[i]])
      IUCN_richness <- calc(sp_raster_stack, fun = sum, na.rm = T)
-     IUCN_richness <- mask(IUCN_richness, mask_ras_list[[i]])
      plot(IUCN_richness, main = paste('resolution =', res(res_list[[i]])))
-     plot(oceans, add = T)
+     plot(continents, add = T, col = "black")
      IUCN_richness_list[[i]] <- IUCN_richness
 }
 dev.off()
@@ -172,28 +177,28 @@ salinity$Meandepth <- rowMeans(salinity[,3:86], na.rm = TRUE)
 coordinates(salinity) <- ~ Longitude + Latitude
 proj4string(salinity) <- "+proj=longlat +datum=WGS84"
 salinity <- spTransform(salinity, CRS("+proj=cea +units=km"))
-pdf('./figures/salinity.pdf')
+pdf('./figures/salinity_unmasked.pdf')
 salinity_list <- vector("list", length = length(res_list))
 for (i in seq_along(res_list)) {
      salinity_raster <- rasterize(salinity, res_list[[i]], 'Meandepth')
-     salinity_raster <- mask(salinity_raster, mask_ras_list[[i]])
      plot(salinity_raster, main = paste('resolution =', res(res_list[[i]])))
-     plot(oceans, add = T)
+     plot(continents, add = T, col = "black")
      salinity_list[[i]] <- salinity_raster
 }
 dev.off()
 
 save(salinity_list, file = './data/raster/salinity_list')
+load('./data/raster/salinity_list')
 
 # distance from coast
 coast_distance_list <- vector("list", length = length(res_list))
-pdf('./figures/distance_from_coast.pdf')
+pdf('./figures/distance_from_coast_unmasked.pdf')
 for (i in seq_along(res_list)) {
   distance_raster <- setValues(res_list[[i]], 0)
-  distance_raster <- mask(distance_raster, mask_ras_list[[i]], inverse = T)
+  distance_raster <- mask(distance_raster, mask_ras_list, inverse = T)
   rd <- distance(distance_raster)
   plot(rd, main = paste('resolution =', res(res_list[[i]])))
-  plot(oceans, add = T)
+  plot(continents, add = T, col = "black")
   coast_distance_list[[i]] <- rd
 }
 dev.off()

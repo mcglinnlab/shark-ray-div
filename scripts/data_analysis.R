@@ -1,6 +1,13 @@
 library(spatialEco)
 library(raster)
 
+# necessary variables
+load('./data/raster/species_richness.Rdata')
+load('./data/raster/temp_list.Rdata')
+load('./data/raster/chloro_list.Rdata')
+load('./data/raster/IUCN_richness_list.Rdata')
+load('./data/raster/salinity_list')
+
 # linear regression temp vs richness
 pdf('./figures/temperature_vs_richness.pdf')
 for (i in 1:7) {
