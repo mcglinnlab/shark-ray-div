@@ -18,7 +18,7 @@ save(oceans_raster, file = './data/raster/oceans_raster.Rdata')
 load('./data/raster/oceans_raster.Rdata')
 
 # for loop to change resolution of oceans_raster
-factor_val <- c(110, 220, 330, 440, 550, 770, 1100)
+factor_val <- c(110, 220, 330, 440, 550, 770, 880, 1100)
 res_list <- vector("list", length = length(factor_val))
 res_list <- lapply(res_list, function(x) oceans_raster)
 for (i in seq_along(factor_val)) {
@@ -36,21 +36,27 @@ for (i in seq_along(res_list)) {
 # raster species polygons
 sp_files <- dir('./data/polygon')
 sp_raster <- vector("list", length = length(sp_files))
-raster_res_list <- vector("list", length = length(res_list))
-for (j in seq_along(res_list)) {
-     for (i in seq_along(sp_files)) {
-          # read in 
-          temp_poly = readOGR(dsn = paste("./data/polygon/", sp_files[i], 
-                                          sep=''), layer = "OGRGeoJSON")
-          # convert projection to cea
-          temp_poly = spTransform(temp_poly, CRS("+proj=cea +units=km"))
-          # add field that will provide values when rasterized
-          temp_poly@data$occur = 1
-          # rasterize
-          sp_raster[[i]] = rasterize(temp_poly, res_list[[j]], field = 'occur')
-     }
-     raster_res_list[[j]] = sp_raster
+for (i in seq_along(sp_files)) {
+      # read in 
+      temp_poly = readOGR(dsn = paste("./data/polygon/", sp_files[i], 
+                                      sep=''), layer = "OGRGeoJSON")
+      # convert projection to cea
+      temp_poly = spTransform(temp_poly, CRS("+proj=cea +units=km"))
+      # add field that will provide values when rasterized
+      temp_poly@data$occur = 1
+      # rasterize
+      sp_raster[[i]] = rasterize(temp_poly, res_list[[1]], field = 'occur')
 }
+
+# now aggregate this finest spatial grid to the coarser resolutions
+
+raster_res_list[[j]] = aggregate(sp_raster[[i]], fac=16, fun = sum) > 0)
+
+
+# Note use rasterize( ... , getCover = TRUE) to estimate how much
+# of a pixel the land is covering or vice-versa how much 
+# ocean is covering. 
+
   
 save(raster_res_list, file = './data/raster/raster_res_list.Rdata')
 load('./data/raster/raster_res_list.Rdata')
