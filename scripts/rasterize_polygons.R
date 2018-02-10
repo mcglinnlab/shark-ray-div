@@ -17,35 +17,19 @@ res(oceans_raster) <- 110
 save(oceans_raster, file = './data/raster/oceans_raster.Rdata')
 load('./data/raster/oceans_raster.Rdata')
 
-# for loop to change resolution of oceans_raster
-factor_val <- c(110, 220, 330, 440, 550, 770, 1100)
-res_list <- vector("list", length = length(factor_val))
-res_list <- lapply(res_list, function(x) oceans_raster)
-for (i in seq_along(factor_val)) {
-     # making new resolutions
-     res(res_list[[i]]) <- factor_val[i]
-}
+# code to change resolution of rasters
+factor_val <- c(1, 2, 4, 8, 16, 32)
 
 # making continents polygon
 world <- map(database = "world", fill = T, plot = F)
 continents <- map2SpatialPolygons(world, IDs = world$names, proj4string = CRS("+proj=longlat"))
 continents <- spTransform(continents, CRS("+proj=cea +units=km"))
 
-# for loop to make a mask raster list
-mask_ras_list <- vector("list", length = length(res_list))
-for (i in seq_along(res_list)) {
-     mask_ras <- rasterize(oceans, res_list[[i]], field = 1)
-     mask_ras_list[[i]] <- mask_ras
-}
-
-# code for using mask:
-# species_richness <- mask(species_richness, mask_ras_list[[i]])
-
 # raster species polygons
 sp_files <- dir('./data/polygon')
 sp_raster <- vector("list", length = length(sp_files))
-raster_res_list <- vector("list", length = length(res_list))
-for (j in seq_along(res_list)) {
+raster_res_list <- vector("list", length = length(factor_val))
+for (j in seq_along(factor_val)) {
      for (i in seq_along(sp_files)) {
           # read in 
           temp_poly = readOGR(dsn = paste("./data/polygon/", sp_files[i], 
@@ -55,9 +39,10 @@ for (j in seq_along(res_list)) {
           # add field that will provide values when rasterized
           temp_poly@data$occur = 1
           # rasterize
-          sp_raster[[i]] = rasterize(temp_poly, res_list[[j]], field = 'occur')
+          sp_raster[[i]] = rasterize(temp_poly, oceans_raster, field = 'occur')
      }
-     raster_res_list[[j]] = sp_raster
+  raster_res_list[[j]] = sp_raster
+  raster_res_list[[j]] = aggregate(sp_raster[[i]], fac = j, fun = sum) > 0
 }
   
 save(raster_res_list, file = './data/raster/raster_res_list.Rdata')
@@ -94,9 +79,10 @@ class(temp)
 proj4string(temp) <- "+proj=longlat +datum=WGS84"
 temp <- spTransform(temp, CRS("+proj=cea +units=km"))
 pdf('./figures/temperature_unmasked.pdf')
-temp_list <- vector("list", length = length(res_list))
-for (i in seq_along(res_list)) {
-     temp_raster <- rasterize(temp, res_list[[i]], 'Meandepth')
+temp_list <- vector("list", length = length(factor_val))
+for (i in seq_along(factor_val)) {
+     temp_raster <- rasterize(temp, oceans_raster, 'Meandepth')
+     temp_raster = aggregate(temp_raster, fac = i, fun = sum) > 0
      plot(temp_raster, main = paste('resolution =', res(res_list[[i]])))
      plot(continents, add = T, col = "black")
      temp_list[[i]] <- temp_raster
@@ -111,10 +97,11 @@ chloro <- raster('./data/Environment/MY1DMM_CHLORA_2017-06-01_rgb_360x180.TIFF')
 chloro <- rasterToPolygons(chloro)
 chloro <- spTransform(chloro, CRS("+proj=cea +units=km"))
 pdf('./figures/chlorophyll.pdf')
-chloro_list <- vector("list", length = length(res_list))
-for (i in seq_along(res_list)) {
-     chloro_ras <- rasterize(chloro, res_list[[i]], 
+chloro_list <- vector("list", length = length(factor_val))
+for (i in seq_along(factor_val)) {
+     chloro_ras <- rasterize(chloro, oceans_raster, 
                              'MY1DMM_CHLORA_2017.06.01_rgb_360x180')
+     chloro_ras <- aggregate(chloro_ras, fac = i, fun = sum) > 0
      values(chloro_ras)[values(chloro_ras) == 255] <- NA
      plot(chloro_ras, main = paste('resolution =', res(res_list[[i]])))
      plot(continents, add = T, col = "black")
@@ -128,8 +115,8 @@ load('./data/raster/chloro_list.Rdata')
 # IUCN shark species richness
 sp_files_IUCN <- dir('./data/IUCN')
 IUCN_raster <- vector("list", length = length(sp_files_IUCN))
-IUCN_res_list <- vector("list", length = length(res_list))
-for (j in seq_along(res_list)) {
+IUCN_res_list <- vector("list", length = length(factor_val))
+for (j in seq_along(factor_val)) {
   for (i in seq_along(sp_files_IUCN)) {
     # read in 
     temp_poly = readOGR(dsn = paste("./data/polygon/", sp_files_IUCN[i], 
@@ -139,9 +126,10 @@ for (j in seq_along(res_list)) {
     # add field that will provide values when rasterized
     temp_poly@data$occur = 1
     # rasterize
-    IUCN_raster[[i]] = rasterize(temp_poly, res_list[[j]], field = 'occur')
+    IUCN_raster[[i]] = rasterize(temp_poly, oceans_raster, field = 'occur')
   }
   IUCN_res_list[[j]] = IUCN_raster
+  IUCN_res_list[[j]] = aggregate(IUCN_raster[[i]], fac= j, fun = sum) > 0
 }
 
 save(IUCN_res_list, file = './data/raster/IUCN_res_list.Rdata')
@@ -178,9 +166,10 @@ coordinates(salinity) <- ~ Longitude + Latitude
 proj4string(salinity) <- "+proj=longlat +datum=WGS84"
 salinity <- spTransform(salinity, CRS("+proj=cea +units=km"))
 pdf('./figures/salinity_unmasked.pdf')
-salinity_list <- vector("list", length = length(res_list))
-for (i in seq_along(res_list)) {
-     salinity_raster <- rasterize(salinity, res_list[[i]], 'Meandepth')
+salinity_list <- vector("list", length = length(factor_val))
+for (i in seq_along(factor_val)) {
+     salinity_raster <- rasterize(salinity, oceans_raster, 'Meandepth')
+     salinity_raster <- aggregate(salinity_raster, fac = i, fun = sum) > 0
      plot(salinity_raster, main = paste('resolution =', res(res_list[[i]])))
      plot(continents, add = T, col = "black")
      salinity_list[[i]] <- salinity_raster
