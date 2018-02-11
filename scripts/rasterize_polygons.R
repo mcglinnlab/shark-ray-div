@@ -3,6 +3,8 @@ library(sp)
 library(maps)
 library(maptools)
 library(raster)
+library(doParallel) 
+library(foreach)
 
 # read in the ocean
 oceans <- readOGR(dsn = "./data/Environment", layer = "ne_10m_ocean")
@@ -17,64 +19,72 @@ res(oceans_raster) <- 110
 save(oceans_raster, file = './data/raster/oceans_raster.Rdata')
 load('./data/raster/oceans_raster.Rdata')
 
-# code to change resolution of rasters
-factor_val <- c(1, 2, 4, 8, 16, 32)
-
 # making continents polygon
 world <- map(database = "world", fill = T, plot = F)
 continents <- map2SpatialPolygons(world, IDs = world$names, proj4string = CRS("+proj=longlat"))
 continents <- spTransform(continents, CRS("+proj=cea +units=km"))
 
-# raster species polygons
-sp_files <- dir('./data/polygon')
-sp_raster <- vector("list", length = length(sp_files))
-raster_res_list <- vector("list", length = length(factor_val))
-for (j in seq_along(factor_val)) {
-     for (i in seq_along(sp_files)) {
-          # read in 
-          temp_poly = readOGR(dsn = paste("./data/polygon/", sp_files[i], 
-                                          sep=''), layer = "OGRGeoJSON")
-          # convert projection to cea
-          temp_poly = spTransform(temp_poly, CRS("+proj=cea +units=km"))
-          # add field that will provide values when rasterized
-          temp_poly@data$occur = 1
-          # rasterize
-          sp_raster[[i]] = rasterize(temp_poly, oceans_raster, field = 'occur')
-     }
-  raster_res_list[[j]] = sp_raster
-  raster_res_list[[j]] = aggregate(sp_raster[[i]], fac = j, fun = sum) > 0
+# rasterize species polygons to the 110 scale
+# then write them to file
+sp_poly_files <- dir("./data/polygon")[c(1:3, 5:7)]
+sp_raster_files <- sub("json", "grd", sp_poly_files)
+sp_raster_files <- sub(" ", "_", sp_raster_files)
+
+dir.create("./data/raster/sp")
+
+cl <- makeCluster(24) 
+registerDoParallel(cl) 
+#clusterExport(cl, list('sp_poly_files', 'sp_raster_files'))
+
+foreach(i = seq_along(sp_poly_files),
+        .packages = c("raster", "rgdal")) %dopar% {
+     # read in 
+     temp_poly = readOGR(dsn = paste0("./data/polygon/", sp_poly_files[i]),
+                                layer = "OGRGeoJSON")
+     # convert projection to cea
+     temp_poly = spTransform(temp_poly, CRS("+proj=cea +units=km"))
+     # add field that will provide values when rasterized
+     temp_poly@data$occur = 1
+     # rasterize
+     sp_raster = rasterize(temp_poly, oceans_raster, field = 'occur')
+     writeRaster(sp_raster, 
+                 filename = paste0("./data/raster/sp/", sp_raster_files[i]),
+                 datatype = "LOG1S", overwrite = TRUE)
 }
+stopCluster(cl)
 
-# now aggregate this finest spatial grid to the coarser resolutions
+# stack rasterized files and aggregate to other scales
 
-raster_res_list[[j]] = aggregate(sp_raster[[i]], fac=16, fun = sum) > 0)
+sp_stack = stack(sapply(sp_raster_files, function(x) 
+                 paste0("./data/raster/sp/", x)))
+names(sp_stack) = sub('.grd', ' ', names(sp_stack))
 
+# create a list of stack at each resultion
+factor_val <- c(1, 2, 4, 8, 16, 32)
+sp_res_stack = lapply(factor_val, function(x) 
+                      aggregate(sp_stack, fac = x, fun = sum) > 0)
 
-# Note use rasterize( ... , getCover = TRUE) to estimate how much
-# of a pixel the land is covering or vice-versa how much 
-# ocean is covering. 
-
-  
-save(raster_res_list, file = './data/raster/raster_res_list.Rdata')
-load('./data/raster/raster_res_list.Rdata')
+save(sp_res_stack, file = './data/raster/sp_res_stack.Rdata')
+load('./data/raster/sp_res_stack.Rdata')
 
 # creating a species richness layer for each resolution
-pdf('./figures/species_richness_maps_unmasked.pdf')
-species_richness_list <- vector("list", length = length(raster_res_list))
-for (i in seq_along(raster_res_list)) {
-     sp_raster_stack <- stack(raster_res_list[[i]])
-     species_richness <- calc(sp_raster_stack, fun = sum, na.rm = T)
-     plot(species_richness, main=paste('resolution =', res(res_list[[i]])))
+species_richness = lapply(sp_res_stack, function(x)
+                  calc(x, fun = sum, na.rm = T))
+
+pdf('./figures/species_richness_maps.pdf')
+for (i in seq_along(species_richness)) {
+     plot(species_richness[[i]], 
+          main=paste('resolution =', res(species_richness[[i]])))
      plot(continents, add = T, col = "black")
-     species_richness_list[[i]] <- species_richness
 }
 dev.off()
 
-save(species_richness_list, file = './data/raster/species_richness.Rdata')
+
+save(species_richness, file = './data/raster/species_richness.Rdata')
 load('./data/raster/species_richness.Rdata')
 
 # code to find the position of the max value
-indx <- which.max(species_richness)
+indx <- which.max(species_richness[[1]])
 pos <- xyFromCell(species_richness, indx)
 pos
 
@@ -201,5 +211,4 @@ for (i in seq_along(res_list)) {
   coast_distance_list[[i]] <- rd
 }
 dev.off()
-
 
