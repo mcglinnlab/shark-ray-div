@@ -1,6 +1,17 @@
 library(spatialEco)
 library(raster)
 
+# necessary variables
+load('./data/raster/species_richness.Rdata')
+load('./data/raster/temp_list.Rdata')
+load('./data/raster/chloro_list.Rdata')
+load('./data/raster/IUCN_richness_list.Rdata')
+load('./data/raster/salinity_list')
+load('./data/raster/mrd_raster_list.Rdata')
+load('./data/raster/pd_raster_list.Rdata')
+load('./data/raster/psv_raster_list.Rdata')
+load('./data/raster/psr_raster_list.Rdata')
+
 # linear regression temp vs richness
 pdf('./figures/temperature_vs_richness.pdf')
 for (i in 1:7) {
@@ -47,65 +58,45 @@ dev.off()
 
 # linear regression chlorophyll vs richness
 pdf('./figures/chlorophyll_vs_richness.pdf')
-richnessVchloro_list <- vector("list", length = 7)
-for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
+for (i in 1:7) {
      plot(values(chloro_list[[i]]), values(species_richness_list[[i]]), 
           main = paste('resolution =', res(res_list[[i]])), 
           xlab = "Chlorophyll (mg/m3)", ylab = "Shark Richness")
      abline(lm(values(species_richness_list[[i]]) ~ values(chloro_list[[i]])), 
             col = 'red')
-     richnessVchloro <- lm(values(species_richness_list[[i]]) ~ 
-                           values(chloro_list[[i]]))
-     richnessVchloro_list[[i]] <- richnessVchloro
-     print(summary(richnessVchloro_list[[i]]))
 }
 dev.off()
 
 # linear regression normal vs threatened
 pdf('./figures/IUSN_vs_Normal.pdf')
-normalVthreatened_list <- vector("list", length = 7)
-for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
+for (i in 1:7) {
      plot(values(species_richness_list[[i]]), values(IUCN_richness_list[[i]]), 
           main = paste('resolution =', res(res_list[[i]])), 
           xlab = "Normal Shark Richness", ylab = "Threatened Shark Richness")
      abline(lm(values(IUCN_richness_list[[i]]) ~ 
             values(species_richness_list[[i]])), col = 'red')
-     normalVthreatened <- lm(values(IUCN_richness_list[[i]]) ~ 
-                             values(species_richness_list[[i]]))
-     normalVthreatened_list[[i]] <- normalVthreatened
-     print(normalVthreatened_list[[i]])
 }
 dev.off()
 
 # latitude vs richness
 pdf('./figures/latitude_vs_richness.pdf')
-latVrichness_list <- vector("list", length = 7)
-for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
+for (i in 1:7) {
      plot(abs(latitude_list[[i]]), values(species_richness_list[[i]]), 
           main = paste('resolution =', res(res_list[[i]])), xlab = "Latitude", 
           ylab = "Shark Richness")
      abline(lm(values(species_richness_list[[i]]) ~ abs(latitude_list[[i]])), 
             col = 'red')
-     latVrichness <- lm(values(species_richness_list[[i]]) ~ 
-                        abs(latitude_list[[i]]))
-     latVrichness_list[[i]] <- latVrichness
-     print(latVrichness_list[[i]])
 }
 dev.off()
 
 # salinity vs richness
 pdf('./figures/salinity_vs_richness.pdf')
-salinityVrichness_list <- vector("list", length = 7)
-for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
+for (i in 1:7) {
      plot(values(salinity_list[[i]]), values(species_richness_list[[i]]), 
           main = paste('resolution =', res(res_list[[i]])), xlab = "Salinity", 
           ylab = "Shark Richness")
      abline(lm(values(species_richness_list[[i]]) ~ 
                  values(salinity_list[[i]])), col = 'red')
-     salinityVrichness <- lm(values(species_richness_list[[i]]) ~ 
-                               values(salinity_list[[i]]))
-     salinityVrichness_list[[i]] <- salinityVrichness
-     print(salinityVrichness_list[[i]])
 }
 dev.off()
 
