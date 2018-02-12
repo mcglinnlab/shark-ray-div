@@ -1,7 +1,5 @@
 library(rgdal)
 library(sp)
-library(maps)
-library(maptools)
 library(raster)
 library(doParallel) 
 library(foreach)
@@ -20,13 +18,12 @@ save(oceans_raster, file = './data/raster/oceans_raster.Rdata')
 load('./data/raster/oceans_raster.Rdata')
 
 # making continents polygon
-world <- map(database = "world", fill = T, plot = F)
-continents <- map2SpatialPolygons(world, IDs = world$names, proj4string = CRS("+proj=longlat"))
+continents <- shapefile('./data/polygon/continent/continent.shp')
 continents <- spTransform(continents, CRS("+proj=cea +units=km"))
 
 # rasterize species polygons to the 110 scale
 # then write them to file
-sp_poly_files <- dir("./data/polygon")[c(1:3, 5:7)]
+sp_poly_files <- dir("./data/polygon")
 sp_raster_files <- sub("json", "grd", sp_poly_files)
 sp_raster_files <- sub(" ", "_", sp_raster_files)
 
