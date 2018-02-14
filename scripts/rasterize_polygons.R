@@ -3,6 +3,8 @@ library(sp)
 library(raster)
 library(doParallel) 
 library(foreach)
+library(maps)
+library(maptools)
 
 # read in the ocean
 oceans <- readOGR(dsn = "./data/Environment", layer = "ne_10m_ocean")
@@ -18,8 +20,11 @@ save(oceans_raster, file = './data/raster/oceans_raster.Rdata')
 load('./data/raster/oceans_raster.Rdata')
 
 # making continents polygon
-continents <- shapefile('./data/polygon/continent/continent.shp')
+world <- map(database = "world", fill = T, plot = F)
+continents <- map2SpatialPolygons(world, IDs = world$names, proj4string = CRS("+proj=longlat"))
 continents <- spTransform(continents, CRS("+proj=cea +units=km"))
+continents <- shapefile(continents, filename = 'continent.shp', layer = './data/continent')
+
 
 # rasterize species polygons to the 110 scale
 # then write them to file
@@ -57,9 +62,10 @@ sp_stack = stack(sapply(sp_raster_files, function(x)
 names(sp_stack) = sub('.grd', ' ', names(sp_stack))
 
 # create a list of stack at each resultion
-factor_val <- c(1, 2, 4, 8, 16, 32)
+factor_val <- c(2, 4, 8, 16, 32)
 sp_res_stack = lapply(factor_val, function(x) 
                       aggregate(sp_stack, fac = x, fun = sum) > 0)
+sp_res_stack <- c(sp_stack, sp_res_stack)
 
 save(sp_res_stack, file = './data/raster/sp_res_stack.Rdata')
 load('./data/raster/sp_res_stack.Rdata')
@@ -80,6 +86,16 @@ dev.off()
 save(species_richness, file = './data/raster/species_richness.Rdata')
 load('./data/raster/species_richness.Rdata')
 
+# masking area of continents
+pdf('./figures/area_test.pdf')
+for (i in 1:6) {
+     test <- rasterize(continents, species_richness[[i]], getCover = T)
+     is.na(values(species_richness[[i]])) <- values(test) > 90
+     plot(species_richness[[i]])
+}
+dev.off()
+
+
 # code to find the position of the max value
 indx <- which.max(species_richness[[1]])
 pos <- xyFromCell(species_richness, indx)
@@ -95,14 +111,14 @@ coordinates(temp) <- ~LONGITUDE + LATITUDE
 class(temp)
 proj4string(temp) <- "+proj=longlat +datum=WGS84"
 temp <- spTransform(temp, CRS("+proj=cea +units=km"))
-pdf('./figures/temperature_unmasked.pdf')
-temp_list <- vector("list", length = length(factor_val))
-for (i in seq_along(factor_val)) {
-     temp_raster <- rasterize(temp, oceans_raster, 'Meandepth')
-     temp_raster = aggregate(temp_raster, fac = i, fun = sum) > 0
-     plot(temp_raster, main = paste('resolution =', res(res_list[[i]])))
+temp_raster <- rasterize(temp, oceans_raster, 'Meandepth')
+temp_list <- lapply(factor_val, function (x)
+                    aggregate(temp_raster, fac = x, fun = sum) > 0)
+temp_list <- c(temp_raster, temp_list)
+pdf('./figures/temperature.pdf')
+for (i in seq_along(temp_list)) {
+     plot(temp_list[[i]], main = paste('resolution =', res(temp_raster)))
      plot(continents, add = T, col = "black")
-     temp_list[[i]] <- temp_raster
 }
 dev.off()
 
