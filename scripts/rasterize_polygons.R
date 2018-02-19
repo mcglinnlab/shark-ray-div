@@ -20,11 +20,8 @@ save(oceans_raster, file = './data/raster/oceans_raster.Rdata')
 load('./data/raster/oceans_raster.Rdata')
 
 # making continents polygon
-world <- map(database = "world", fill = T, plot = F)
-continents <- map2SpatialPolygons(world, IDs = world$names, proj4string = CRS("+proj=longlat"))
+continents <- shapefile('./data/continent/continent')
 continents <- spTransform(continents, CRS("+proj=cea +units=km"))
-continents <- shapefile(continents, filename = 'continent.shp', layer = './data/continent')
-
 
 # rasterize species polygons to the 110 scale
 # then write them to file
@@ -75,7 +72,9 @@ species_richness = lapply(sp_res_stack, function(x)
                   calc(x, fun = sum, na.rm = T))
 
 pdf('./figures/species_richness_maps.pdf')
-for (i in seq_along(species_richness)) {
+for (i in 1:6) {
+     test <- rasterize(continents, species_richness[[i]], getCover = T)
+     is.na(values(species_richness[[i]])) <- values(test) > 90
      plot(species_richness[[i]], 
           main=paste('resolution =', res(species_richness[[i]])))
      plot(continents, add = T, col = "black")
@@ -105,40 +104,46 @@ pos
 temp <- read.csv('./data/Environment/temp.csv')
 head(temp)
 temp$Meandepth <- rowMeans(temp[,3:87], na.rm = TRUE)
-names(temp)
-class(temp)
 coordinates(temp) <- ~LONGITUDE + LATITUDE
-class(temp)
 proj4string(temp) <- "+proj=longlat +datum=WGS84"
 temp <- spTransform(temp, CRS("+proj=cea +units=km"))
 temp_raster <- rasterize(temp, oceans_raster, 'Meandepth')
 temp_list <- lapply(factor_val, function (x)
-                    aggregate(temp_raster, fac = x, fun = sum) > 0)
+                    aggregate(temp_raster, fac = x, fun = mean))
+temp_list_sd <- lapply(factor_val, function (x)
+                      aggregate(temp_raster, fac = x, fun = sd))                    
 temp_list <- c(temp_raster, temp_list)
-pdf('./figures/temperature.pdf')
+temp_list_sd <- c(temp_raster, temp_list_sd)
+pdf('./figures/temperature_mean.pdf')
 for (i in seq_along(temp_list)) {
      plot(temp_list[[i]], main = paste('resolution =', res(temp_raster)))
      plot(continents, add = T, col = "black")
 }
 dev.off()
+pdf('./figures/temperature_sd.pdf')
+for (i in seq_along(temp_list_sd)) {
+  plot(temp_list_sd[[i]], main = paste('resolution =', res(temp_raster)))
+  plot(continents, add = T, col = "black")
+}
+dev.off()
 
 save(temp_list, file = './data/raster/temp_list.Rdata')
+save(temp_list_sd, file = './data/raster/temp_list_sd.Rdata')
 load('./data/raster/temp_list.Rdata')
 
 # chlorophyll
 chloro <- raster('./data/Environment/MY1DMM_CHLORA_2017-06-01_rgb_360x180.TIFF')
 chloro <- rasterToPolygons(chloro)
 chloro <- spTransform(chloro, CRS("+proj=cea +units=km"))
+chloro_ras <- rasterize(chloro, oceans_raster, 
+                        'MY1DMM_CHLORA_2017.06.01_rgb_360x180')
+chloro_list <- lapply(factor_val, function (x)
+                      aggregate(chloro_ras, fac = x, fun = mean))
+chloro_list <- c(chloro_ras, chloro_list)
 pdf('./figures/chlorophyll.pdf')
-chloro_list <- vector("list", length = length(factor_val))
-for (i in seq_along(factor_val)) {
-     chloro_ras <- rasterize(chloro, oceans_raster, 
-                             'MY1DMM_CHLORA_2017.06.01_rgb_360x180')
-     chloro_ras <- aggregate(chloro_ras, fac = i, fun = sum) > 0
-     values(chloro_ras)[values(chloro_ras) == 255] <- NA
-     plot(chloro_ras, main = paste('resolution =', res(res_list[[i]])))
+for (i in 1:6) {
+     plot(chloro_list[[i]], main = paste('resolution =', res(chloro_list[[i]])))
      plot(continents, add = T, col = "black")
-     chloro_list[[i]] <- chloro_ras
 }
 dev.off()
 
