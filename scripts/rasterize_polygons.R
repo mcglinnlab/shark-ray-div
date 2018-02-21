@@ -138,7 +138,7 @@ chloro <- spTransform(chloro, CRS("+proj=cea +units=km"))
 chloro_ras <- rasterize(chloro, oceans_raster, 
                         'MY1DMM_CHLORA_2017.06.01_rgb_360x180')
 chloro_list <- lapply(factor_val, function (x)
-                      aggregate(chloro_ras, fac = x, fun = mean))
+  aggregate(chloro_ras, fac = x, fun = mean))
 chloro_list <- c(chloro_ras, chloro_list)
 pdf('./figures/chlorophyll.pdf')
 for (i in 1:6) {
@@ -203,14 +203,14 @@ salinity$Meandepth <- rowMeans(salinity[,3:86], na.rm = TRUE)
 coordinates(salinity) <- ~ Longitude + Latitude
 proj4string(salinity) <- "+proj=longlat +datum=WGS84"
 salinity <- spTransform(salinity, CRS("+proj=cea +units=km"))
-pdf('./figures/salinity_unmasked.pdf')
-salinity_list <- vector("list", length = length(factor_val))
+salinity_raster <- rasterize(salinity, oceans_raster, 'Meandepth')
+salinity_list <- lapply(factor_val, function (x)
+  aggregate(salinity_raster, fac = x, fun = mean))
+salinity_list <- c(salinity_raster, salinity_list)
+pdf('./figures/salinity.pdf')
 for (i in seq_along(factor_val)) {
-     salinity_raster <- rasterize(salinity, oceans_raster, 'Meandepth')
-     salinity_raster <- aggregate(salinity_raster, fac = i, fun = sum) > 0
-     plot(salinity_raster, main = paste('resolution =', res(res_list[[i]])))
+     plot(salinity_list[[i]], main = paste('resolution =', res(salinity_list[[i]])))
      plot(continents, add = T, col = "black")
-     salinity_list[[i]] <- salinity_raster
 }
 dev.off()
 
