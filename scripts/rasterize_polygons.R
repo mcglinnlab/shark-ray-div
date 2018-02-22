@@ -151,42 +151,65 @@ save(chloro_list, file = './data/raster/chloro_list.Rdata')
 load('./data/raster/chloro_list.Rdata')
 
 # IUCN shark species richness
-sp_files_IUCN <- dir('./data/IUCN')
-IUCN_raster <- vector("list", length = length(sp_files_IUCN))
-IUCN_res_list <- vector("list", length = length(factor_val))
-for (j in seq_along(factor_val)) {
-  for (i in seq_along(sp_files_IUCN)) {
-    # read in 
-    temp_poly = readOGR(dsn = paste("./data/polygon/", sp_files_IUCN[i], 
-                                    sep=''), layer = "OGRGeoJSON")
-    # convert projection to cea
-    temp_poly = spTransform(temp_poly, CRS("+proj=cea +units=km"))
-    # add field that will provide values when rasterized
-    temp_poly@data$occur = 1
-    # rasterize
-    IUCN_raster[[i]] = rasterize(temp_poly, oceans_raster, field = 'occur')
-  }
-  IUCN_res_list[[j]] = IUCN_raster
-  IUCN_res_list[[j]] = aggregate(IUCN_raster[[i]], fac= j, fun = sum) > 0
-}
+iucn_poly_files <- dir("./data/IUCN")
+iucn_raster_files <- sub("json", "grd", iucn_poly_files)
+iucn_raster_files <- sub(" ", "_", iucn_raster_files)
 
-save(IUCN_res_list, file = './data/raster/IUCN_res_list.Rdata')
-load('./data/raster/IUCN_res_list.Rdata')
+dir.create("./data/raster/iucn")
 
-# creating an IUCN richness layer for each resolution
-pdf('./figures/IUCN_richness_maps_unmasked.pdf')
-IUCN_richness_list <- vector("list", length = length(IUCN_res_list))
-for (i in seq_along(IUCN_res_list)) {
-     sp_raster_stack <- stack(IUCN_res_list[[i]])
-     IUCN_richness <- calc(sp_raster_stack, fun = sum, na.rm = T)
-     plot(IUCN_richness, main = paste('resolution =', res(res_list[[i]])))
-     plot(continents, add = T, col = "black")
-     IUCN_richness_list[[i]] <- IUCN_richness
+cl <- makeCluster(24) 
+registerDoParallel(cl) 
+#clusterExport(cl, list('iucn_poly_files', 'iucn_raster_files'))
+
+foreach(i = seq_along(iucn_poly_files),
+        .packages = c("raster", "rgdal")) %dopar% {
+          # read in 
+          temp_poly = readOGR(dsn = paste0("./data/IUCN/", iucn_poly_files[i]),
+                              layer = "OGRGeoJSON")
+          # convert projection to cea
+          temp_poly = spTransform(temp_poly, CRS("+proj=cea +units=km"))
+          # add field that will provide values when rasterized
+          temp_poly@data$occur = 1
+          # rasterize
+          iucn_raster = rasterize(temp_poly, oceans_raster, field = 'occur')
+          writeRaster(iucn_raster, 
+                      filename = paste0("./data/raster/iucn/", iucn_raster_files[i]),
+                      datatype = "LOG1S", overwrite = TRUE)
+        }
+stopCluster(cl)
+
+# stack rasterized files and aggregate to other scales
+
+iucn_stack = stack(sapply(iucn_raster_files, function(x) 
+  paste0("./data/raster/iucn/", x)))
+names(iucn_stack) = sub('.grd', ' ', names(iucn_stack))
+
+# create a list of stack at each resultion
+factor_val <- c(2, 4, 8, 16, 32)
+iucn_res_stack = lapply(factor_val, function(x) 
+  aggregate(iucn_stack, fac = x, fun = sum) > 0)
+iucn_res_stack <- c(iucn_stack, iucn_res_stack)
+
+save(iucn_res_stack, file = './data/raster/iucn_res_stack.Rdata')
+load('./data/raster/iucn_res_stack.Rdata')
+
+# creating a species richness layer for each resolution
+iucn_richness = lapply(iucn_res_stack, function(x)
+  calc(x, fun = sum, na.rm = T))
+
+pdf('./figures/IUCN_richness_maps.pdf')
+for (i in 1:6) {
+  test <- rasterize(continents, iucn_richness[[i]], getCover = T)
+  is.na(values(iucn_richness[[i]])) <- values(test) > 90
+  plot(iucn_richness[[i]], 
+       main=paste('resolution =', res(iucn_richness[[i]])))
+  plot(continents, add = T, col = "black")
 }
 dev.off()
 
-save(IUCN_richness_list, file = './data/raster/IUCN_richness_list.Rdata')
-load('./data/raster/IUCN_richness_list.Rdata')
+save(iucn_richness, file = './data/raster/iucn_richness.Rdata')
+load('./data/raster/iucn_richness.Rdata')
+
 
 # making a value for latitude
 latitude_list <- vector("list", length = length(res_list))
