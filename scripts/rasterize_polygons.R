@@ -94,6 +94,19 @@ for (i in 1:6) {
 }
 dev.off()
 
+# area
+area_list <- vector("list", length = 6)
+pdf('./figures/area.pdf')
+for (i in 1:6) {
+  area_raster <- rasterize(continents, species_richness[[i]], getCover = T)
+  plot(area_raster)
+  plot(continents, add = T, col = 'black')
+  area_list[[i]] <- area_raster
+}
+dev.off()
+
+save(area_list, file = './data/raster/area_list.Rdata')
+
 
 # code to find the position of the max value
 indx <- which.max(species_richness[[1]])
