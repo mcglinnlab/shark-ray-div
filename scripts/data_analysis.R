@@ -11,21 +11,24 @@ load('./data/raster/mrd_raster_list.Rdata')
 load('./data/raster/pd_raster_list.Rdata')
 load('./data/raster/psv_raster_list.Rdata')
 load('./data/raster/psr_raster_list.Rdata')
+load('./data/raster/area_list.Rdata')
 
-# linear regression temp vs richness
+# linear regression temp and area vs richness
+temp_stats <- vector("list", length = 6)
 pdf('./figures/temperature_vs_richness.pdf')
-for (i in 1:7) {
-     plot(values(temp_list[[i]]), values(species_richness_list[[i]]),
-          main = paste('resolution =', res(res_list[[i]])), 
-          xlab = "Temperature (°C)", ylab = "Shark Richness")
-     abline(lm(values(species_richness_list[[i]]) ~ values(temp_list[[i]])), 
-            col = 'red')
+for (i in 1:6) {
+     temp <- lm(values(species_richness[[i]]) ~ values(temp_list[[i]]) + 
+                  values(area_list[[i]]))
+     plot(temp,
+          main = paste('resolution =', res(species_richness[[i]])), 
+          xlab = "Temperature vs Area", ylab = "Shark Richness")
+     temp_stats[[i]] <- summary(temp)
 }
 dev.off()
 
 # temp vs psv
 pdf('./figures/temperature_vs_psv.pdf')
-for (i in 1:7) {
+for (i in 1:9) {
   plot(values(temp_list[[i]]), values(psv_raster_list[[i]]),
        main = paste('resolution =', res(res_list[[i]])), 
        xlab = "Temperature (°C)", ylab = "Phylogenetic Species Variance (PSV)")
@@ -36,7 +39,7 @@ dev.off()
 
 # temp vs mrd
 pdf('./figures/temperature_vs_mrd.pdf')
-for (i in 1:7) {
+for (i in 1:9) {
   plot(values(temp_list[[i]]), values(mrd_raster_list[[i]]),
        main = paste('resolution =', res(res_list[[i]])), 
        xlab = "Temperature (°C)", ylab = "mrd")
@@ -47,7 +50,7 @@ dev.off()
 
 # temp vs beta
 pdf('./figures/temperature_vs_beta.pdf')
-for (i in 1:7) {
+for (i in 1:9) {
   plot(values(temp_list[[i]]), values(beta_raster_list[[i]]),
        main = paste('resolution =', res(res_list[[i]])), 
        xlab = "Temperature (°C)", ylab = "beta")
@@ -58,7 +61,7 @@ dev.off()
 
 # linear regression chlorophyll vs richness
 pdf('./figures/chlorophyll_vs_richness.pdf')
-for (i in 1:7) {
+for (i in 1:9) {
      plot(values(chloro_list[[i]]), values(species_richness_list[[i]]), 
           main = paste('resolution =', res(res_list[[i]])), 
           xlab = "Chlorophyll (mg/m3)", ylab = "Shark Richness")
@@ -69,7 +72,7 @@ dev.off()
 
 # linear regression normal vs threatened
 pdf('./figures/IUSN_vs_Normal.pdf')
-for (i in 1:7) {
+for (i in 1:9) {
      plot(values(species_richness_list[[i]]), values(IUCN_richness_list[[i]]), 
           main = paste('resolution =', res(res_list[[i]])), 
           xlab = "Normal Shark Richness", ylab = "Threatened Shark Richness")
@@ -80,7 +83,7 @@ dev.off()
 
 # latitude vs richness
 pdf('./figures/latitude_vs_richness.pdf')
-for (i in 1:7) {
+for (i in 1:9) {
      plot(abs(latitude_list[[i]]), values(species_richness_list[[i]]), 
           main = paste('resolution =', res(res_list[[i]])), xlab = "Latitude", 
           ylab = "Shark Richness")
@@ -91,7 +94,7 @@ dev.off()
 
 # salinity vs richness
 pdf('./figures/salinity_vs_richness.pdf')
-for (i in 1:7) {
+for (i in 1:9) {
      plot(values(salinity_list[[i]]), values(species_richness_list[[i]]), 
           main = paste('resolution =', res(res_list[[i]])), xlab = "Salinity", 
           ylab = "Shark Richness")
@@ -102,7 +105,7 @@ dev.off()
 
 # distance from coast vs richness normal
 pdf('./figures/coast_vs_richness_norm.pdf')
-for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
+for (i in 1:9) {
      plot(values(coast_distance_list[[i]]), values(species_richness_list[[i]]), 
           main = paste('resolution =', res(res_list[[i]])), xlab = "Distance", 
           ylab = "Shark Richness")
@@ -111,7 +114,7 @@ dev.off()
 
 # distance from coast vs richness log
 pdf('./figures/coast_vs_richness_log.pdf')
-for (i in seq_along(c(1, 2, 3, 4, 5, 6, 7))) {
+for (i in 1:9) {
   plot(log(values(coast_distance_list[[i]])), values(species_richness_list[[i]]), 
        main = paste('resolution =', res(res_list[[i]])), xlab = "Distance", 
        ylab = "Shark Richness")
@@ -122,7 +125,7 @@ dev.off()
 
 # taxonomic richness vs faith's pd
 pdf('./figures/richness_vs_pd.pdf')
-for (i in 1:7) {
+for (i in 1:9) {
   plot(values(pd_raster_list[[i]]), values(species_richness_list[[i]]), 
        main = paste('resolution =', res(res_list[[i]])), 
        xlab = "Faith's Phylogentic Diversity", 
@@ -134,7 +137,7 @@ dev.off()
 
 # taxonomic richness vs psv
 pdf('./figures/richness_vs_psv.pdf')
-for (i in 1:7) {
+for (i in 1:9) {
   plot(values(psv_raster_list[[i]]), values(species_richness_list[[i]]), 
        main = paste('resolution =', res(res_list[[i]])), 
        xlab = "PSV", 
@@ -146,7 +149,7 @@ dev.off()
 
 # taxonomic richness vs psr
 pdf('./figures/richness_vs_psr.pdf')
-for (i in 1:7) {
+for (i in 1:9) {
   plot(values(psr_raster_list[[i]]), values(species_richness_list[[i]]), 
        main = paste('resolution =', res(res_list[[i]])), 
        xlab = "PSR", 
@@ -158,7 +161,7 @@ dev.off()
 
 # MRD vs psv
 pdf('./figures/MRD_vs_psv.pdf')
-for (i in 1:7) {
+for (i in 1:9) {
   plot(values(psv_raster_list[[i]]), values(mrd_raster_list[[i]]), 
        main = paste('resolution =', res(res_list[[i]])), 
        xlab = "Phylogenetic Species Variance (PSV)", 
@@ -168,33 +171,9 @@ for (i in 1:7) {
 }
 dev.off()
 
-# taxonomic richness vs random pd
-pdf('./figures/richness_vs_randompd.pdf')
-for (i in 1:7) {
-  plot(values(randompd_raster_list[[i]]), values(species_richness_list[[i]]), 
-       main = paste('resolution =', res(res_list[[i]])), 
-       xlab = "Random PD", 
-       ylab = "Taxonomic Richness")
-  abline(lm(values(species_richness_list[[i]]) ~ 
-              values(randompd_raster_list[[i]])), col = 'red')
-}
-dev.off()
-
-# normal psv vs random psv
-pdf('./figures/normalpsv_vs_randompsv.pdf')
-for (i in 1:7) {
-  plot(values(psv_raster_list[[i]]), values(randompsv_raster_list[[i]]), 
-       main = paste('resolution =', res(res_list[[i]])), 
-       xlab = "Normal PSV", 
-       ylab = "Random PSV")
-  abline(lm(values(randompsv_raster_list[[i]]) ~ 
-              values(psv_raster_list[[i]])), col = 'red')
-}
-dev.off()
-
 # MRD vs taxonomic richness
 pdf('./figures/richness_vs_MRD.pdf')
-for (i in 1:7) {
+for (i in 1:9) {
   values(mrd_raster_list[[i]])[values(mrd_raster_list[[i]]) == 0] <- NA
   values(species_richness_list[[i]])[values(species_richness_list[[i]]) == 0] <- NA
   plot(values(mrd_raster_list[[i]]), values(species_richness_list[[i]]), 
@@ -208,7 +187,7 @@ dev.off()
 
 # chlorophyll_vs_psv
 pdf('./figures/chlorophyll_vs_psv.pdf')
-for (i in 1:7) {
+for (i in 1:9) {
   plot(values(chloro_list[[i]]), values(psv_raster_list[[i]]), 
        main = paste('resolution =', res(res_list[[i]])), 
        xlab = "chlorophyll", 
@@ -220,7 +199,7 @@ dev.off()
 
 # chlorophyll_vs_mrd
 pdf('./figures/chlorophyll_vs_mrd.pdf')
-for (i in 1:7) {
+for (i in 1:9) {
   plot(values(chloro_list[[i]]), values(mrd_raster_list[[i]]), 
        main = paste('resolution =', res(res_list[[i]])), 
        xlab = "chlorophyll", 
@@ -232,7 +211,7 @@ dev.off()
 
 # chlorophyll_vs_beta
 pdf('./figures/chlorophyll_vs_beta.pdf')
-for (i in 1:7) {
+for (i in 1:9) {
   plot(values(chloro_list[[i]]), values(beta_raster_list[[i]]), 
        main = paste('resolution =', res(res_list[[i]])), 
        xlab = "chlorophyll", 
