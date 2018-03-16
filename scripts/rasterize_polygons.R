@@ -150,6 +150,7 @@ chloro <- rasterToPolygons(chloro)
 chloro <- spTransform(chloro, CRS("+proj=cea +units=km"))
 chloro_ras <- rasterize(chloro, oceans_raster, 
                         'MY1DMM_CHLORA_2017.06.01_rgb_360x180')
+values(chloro_ras)[values(chloro_ras) == 255] <- NA
 chloro_list <- lapply(factor_val, function (x)
   aggregate(chloro_ras, fac = x, fun = mean))
 chloro_list <- c(chloro_ras, chloro_list)
@@ -225,9 +226,10 @@ load('./data/raster/iucn_richness.Rdata')
 
 
 # making a value for latitude
-latitude_list <- vector("list", length = length(res_list))
-for (i in seq_along(res_list)) {
-     oceans_p <- rasterToPoints(res_list[[i]])
+latitude_list <- vector("list", length = 6)
+for (i in 1:6) {
+  values(species_richness[[i]]) <- NA  
+  oceans_p <- rasterToPoints(species_richness[[i]])
      oceans_p_df <- data.frame(oceans_p)
      latitude <- oceans_p_df$y
      latitude_list[[i]] <- latitude
