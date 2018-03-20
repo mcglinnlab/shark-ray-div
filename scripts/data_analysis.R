@@ -1,5 +1,3 @@
-library(spatialEco)
-library(raster)
 
 # necessary variables
 load('./data/raster/species_richness.Rdata')
@@ -14,67 +12,64 @@ load('./data/raster/psr_raster_list.Rdata')
 load('./data/raster/area_list.Rdata')
 load('./data/raster/beta_raster_list.Rdata')
 
-# linear regression temp and area vs richness
-temp_stats <- vector("list", length = 6)
-pdf('./figures/temperature_and_area_vs_richness.pdf')
+# make an array with everything in it
+data_list <- vector("list", length = 6)
 for (i in 1:6) {
-     temp <- lm(values(species_richness[[i]]) ~ values(temp_list[[i]]) + 
-                  values(area_list[[i]]))
-     plot(values(temp_list[[i]]) + values(area_list[[i]]), 
-          values(species_richness[[i]]),
-          main = paste('resolution =', res(species_richness[[i]])), 
-          xlab = "Temperature (°C) vs Area", ylab = "Shark Richness")
-     temp_stats[[i]] <- summary(temp)
+  coo <- coordinates(species_richness[[i]])
+  longitude <- coo[,1]
+  latitude <- coo[,2]
+  dat <- data.frame(latitude, longitude, values(species_richness[[i]]), 
+                values(car_richness[[i]]), values(lam_richness[[i]]), 
+                values(psv_raster_list[[i]]), values(car_psv_list[[i]]), 
+                values(lam_psv_list[[i]]), values(mrd_raster_list[[i]]),
+                values(car_mrd_list[[i]]), values(lam_mrd_list[[i]]),
+                values(beta_raster_list[[i]]), values(temp_list[[i]]), 
+                values(bathy_list[[i]]), values(chloro_list[[i]]),
+                values(salinity_list[[i]]), values(area_list[[i]]),
+                values(distance_list[[i]])) 
+  colnames(dat) <- c("latitude", "longitude", "total_species_richness", 
+                     "carcharhiniforme_species_richness", 
+                     "lamniformes_species_richness", "total_psv", 
+                     "carcharhiniforme_psv", "lamniforme_psv", "total_mrd",
+                     "carcharhiniforme_mrd", "lamniforme_mrd", "total_beta",
+                     "temperature", "bathymetry", "chlorophyll", "salinity", 
+                     "area", "distance_from_coast")
+  data_list[[i]] <- dat
 }
+save(data_list, file = './data/data_list.Rdata')
+load('./data/data_list.Rdata')
+  
+# make_plot function plots two variables against one another
+# x = x axis variable, must be chosen from data_list, in character form
+# y = y axis variable, must be chosen from data_list, in character form
+# z = x axis label as character string
+# w = y axis label as character string
+# v = pdf file
+# output are statistics summary, name and save accordingly
+make_plot <- function(x, y, z, w, v) {
+   load('./data/data_list.Rdata')
+   stats <- vector("list", length = 6)
+   pdf(v)
+   for (i in 1:6) {
+        lin <- lm(data_list[[i]]$y ~ data_list[[i]]$x) 
+        plot(data_list[[i]]$x, data_list[[i]]$y, 
+             main = paste('resolution =', res(species_richness[[i]])), 
+             xlab = z, ylab = w)
+        abline(lin, col = 'red')
+        stats[[i]] <- summary(lin)
+    }
 dev.off()
-save(temp_stats, file = './data/stats/temp_stats.Rdata')
-load('./data/stats/temp_stats.Rdata')
+return(stats)
+}
 
-# temp and area vs psv
-tempVpsv_stats <- vector("list", length = 6)
-pdf('./figures/temperature_and_area_vs_psv.pdf')
-for (i in 1:6) {
-  temp <- lm(values(psv_raster_list[[i]]) ~ values(temp_list[[i]]) + 
-               values(area_list[[i]]))
-  plot(values(temp_list[[i]]) + values(area_list[[i]]), 
-       values(psv_raster_list[[i]]),
-       main = paste('resolution =', res(species_richness[[i]])), 
-       xlab = "Temperature (°C) vs Area", ylab = "Phylogenetic Species Variance (PSV)")
-  tempVpsv_stats[[i]] <- summary(temp)
-}
-dev.off()
-save(tempVpsv_stats, file = './data/stats/tempVpsv_stats.Rdata')
-load('./data/stats/tempVpsv_stats.Rdata')
+# temperature vs total richness
+tempVrichness_stats <- make_plot(temperature, total_species_richness,
+                                 "Temperature (°C)", "Species Richness",
+                                 './figures/temperature_vs_richness.pdf')
 
-# temp and area vs mrd
-tempVmrd_stats <- vector("list", length = 6)
-pdf('./figures/temperature_and_area_vs_mrd.pdf')
-for (i in 1:6) {
-  temp <- lm(values(mrd_raster_list[[i]]) ~ values(temp_list[[i]]) + 
-               values(area_list[[i]]))
-  plot(values(temp_list[[i]]) + area_list[[i]], values(mrd_raster_list[[i]]),
-       main = paste('resolution =', res(species_richness[[i]])), 
-       xlab = "Temperature (°C) vs Area", ylab = "mrd")
-  tempVmrd_stats <- temp
-}
-dev.off()
-save(tempVmrd_stats, file = './data/stats/tempVmrd_stats.Rdata')
-load('./data/stats/tempVmrd_stats.Rdata')
+# richness vs area
+plot(log(values(area_list[[1]])), values(species_richness[[1]]))
 
-# temp and area vs beta
-tempVbeta_stats <- vector("list", length = 6)
-pdf('./figures/temperature_and_area_vs_beta.pdf')
-for (i in 1:6) {
-  temp <- lm(values(beta_raster_list[[i]]) ~ values(temp_list[[i]]) + 
-               values(area_list[[i]]))
-  plot(values(temp_list[[i]]) + area_list[[i]], values(beta_raster_list[[i]]),
-       main = paste('resolution =', res(species_richness[[i]])), 
-       xlab = "Temperature (°C) vs Area", ylab = "beta")
-  tempVbeta_stats[[i]] <- temp
-}
-dev.off()
-save(tempVbeta_stats, file = './data/stats/tempVbeta_stats.Rdata')
-load('./data/stats/tempVbeta_stats.Rdata')
 
 # linear regression temp vs richness
 tempVrichness_stats <- vector("list", length = 6)
@@ -100,7 +95,7 @@ for (i in 1:6) {
   plot(values(temp_list[[i]]), 
        values(psv_raster_list[[i]]),
        main = paste('resolution =', res(species_richness[[i]])), 
-       xlab = "Temperature (°C) vs Area", ylab = "Phylogenetic Species Variance (PSV)")
+       xlab = "Temperature (°C)", ylab = "Phylogenetic Species Variance (PSV)")
   abline(lm(values(psv_raster_list[[i]]) ~ values(temp_list[[i]])), col = 'red')
   tempVpsv_stats_alone[[i]] <- summary(temp)
 }
@@ -115,7 +110,7 @@ for (i in 1:6) {
   temp <- lm(values(mrd_raster_list[[i]]) ~ values(temp_list[[i]]))
   plot(values(temp_list[[i]]), values(mrd_raster_list[[i]]),
        main = paste('resolution =', res(species_richness[[i]])), 
-       xlab = "Temperature (°C) vs Area", ylab = "mrd")
+       xlab = "Temperature (°C)", ylab = "MRD (Mean Root Distance)")
   abline(lm(values(mrd_raster_list[[i]]) ~ values(temp_list[[i]])), col = 'red')
   tempVmrd_stats_alone[[i]] <- temp
 }
@@ -130,7 +125,7 @@ for (i in 1:6) {
   temp <- lm(values(beta_raster_list[[i]]) ~ values(temp_list[[i]]))
   plot(values(temp_list[[i]]) + area_list[[i]], values(beta_raster_list[[i]]),
        main = paste('resolution =', res(species_richness[[i]])), 
-       xlab = "Temperature (°C) vs Area", ylab = "beta")
+       xlab = "Temperature (°C)", ylab = "beta")
   abline(lm(values(beta_raster_list[[i]]) ~ values(temp_list[[i]])), col = 'red')
   tempVbeta_stats_alone[[i]] <- temp 
 }
