@@ -269,10 +269,242 @@ load('./data/stats/areaVbeta_stats.Rdata')
 
 
 # total richness vs total mrd
+mrdVrichness_stats <- make_plot(total_mrd, total_species_richness,
+                                     "Mean Root Distance", "Species Richness",
+                                     './figures/mrd_vs_richness.pdf')
+save(mrdVrichness_stats, file = './data/stats/mrdVrichness_stats.Rdata')
+load('./data/stats/mrdVrichness_stats.Rdata')
 
 # total mrd vs total psv
+psvVmrd_stats <- make_plot(total_psv, total_mrd,
+                                "Phylogenetic Species Variance (PSV)", 
+                                "Mean Root Distance (MRD)",
+                                './figures/psv_vs_mrd.pdf')
+save(psvVmrd_stats, file = './data/stats/psvVmrd_stats.Rdata')
+load('./data/stats/psvVmrd_stats.Rdata')
 
 # total psv vs total richness
+psvVrichness_stats <- make_plot(total_psv, total_species_richness,
+                                "Phylogenetic Species Variance (PSV)", 
+                                "Species Richness",
+                                './figures/psv_vs_richness.pdf')
+save(psvVrichness_stats, file = './data/stats/psvVrichness_stats.Rdata')
+load('./data/stats/psvVrichness_stats.Rdata')
+
+
+
+# all for Carcharhiniformes
+# temperature vs richness
+tempVcarrichness_stats <- make_plot(temperature, carcharhiniforme_species_richness,
+                                 "Temperature (°C)", 
+                                 "Carcharhiniformes Species Richness",
+                                 './figures/temperature_vs_Car_richness.pdf')
+save(tempVcarrichness_stats, file = './data/stats/tempVcarrichness_stats.Rdata')
+load('./data/stats/tempVcarrichness_stats.Rdata')
+
+# temperature vs psv
+tempVcarpsv_stats <- make_plot(temperature, carcharhiniforme_psv,
+                            "Temperature (°C)", 
+                            "Phylogenetic Species Richness (PSV) Carcharhiniformes",
+                            './figures/temperature_vs_Car_psv.pdf')
+save(tempVcarpsv_stats, file = './data/stats/tempVcarpsv_stats.Rdata')
+load('./data/stats/tempVcarpsv_stats.Rdata')
+
+# temperature vs mrd
+tempVcarmrd_stats <- make_plot(temperature, carcharhiniforme_mrd,
+                            "Temperature (°C)", 
+                            "Mean Root Distance (MRD) Carcharhiniformes",
+                            './figures/temperature_vs_Car_mrd.pdf')
+save(tempVcarmrd_stats, file = './data/stats/tempVcarmrd_stats.Rdata')
+load('./data/stats/tempVcarmrd_stats.Rdata')
+
+
+# bathymetry vs richness
+bathVcarrichness_stats <- make_plot(bathymetry, carcharhiniforme_species_richness,
+                                 "Depth (m)", 
+                                 "Carcharhiniformes Species Richness",
+                                 './figures/bath_vs_Car_richness.pdf')
+save(bathVcarrichness_stats, file = './data/stats/bathVcarrichness_stats.Rdata')
+load('./data/stats/bathVcarrichness_stats.Rdata')
+
+# bathymetry vs psv
+bathVcarpsv_stats <- make_plot(bathymetry, carcharhiniforme_psv,
+                            "Depth (m)", 
+                            "Phylogenetic Species Richness (PSV) carcharhiniformes",
+                            './figures/bath_vs_Car_psv.pdf')
+save(bathVcarpsv_stats, file = './data/stats/bathVcarpsv_stats.Rdata')
+load('./data/stats/bathVcarpsv_stats.Rdata')
+
+# bathymetry vs mrd
+bathVcarmrd_stats <- make_plot(bathymetry, carcharhiniforme_mrd,
+                            "Depth (m)", 
+                            "Mean Root Distance (MRD) Carcharhiniformes",
+                            './figures/bath_vs_Car_mrd.pdf')
+save(bathVcarmrd_stats, file = './data/stats/bathVcarmrd_stats.Rdata')
+load('./data/stats/bathVcarmrd_stats.Rdata')
+
+
+# distance vs richness
+distanceVcarrichness_stats <- make_plot(distance_from_coast, 
+                                        carcharhiniforme_species_richness,
+                                        "Distance (km)", 
+                                        "Carcharhiniformes Species Richness",
+                                    './figures/distance_vs_Car_richness.pdf')
+save(distanceVcarrichness_stats, file = './data/stats/distanceVcarrichness_stats.Rdata')
+load('./data/stats/distanceVcarrichness_stats.Rdata')
+
+# distance vs psv
+distanceVcarpsv_stats <- make_plot(distance_from_coast, carcharhiniforme_psv,
+                               "Distance (km)", 
+                               "Phylogenetic Species Richness (PSV) Carcharhiniformes",
+                               './figures/distance_vs_Car_psv.pdf')
+save(distanceVcarpsv_stats, file = './data/stats/distanceVcarpsv_stats.Rdata')
+load('./data/stats/distanceVcarpsv_stats.Rdata')
+
+# distance vs mrd
+distanceVcarmrd_stats <- make_plot(distance_from_coast, carcharhiniforme_mrd,
+                               "Distance (km)", 
+                               "Mean Root Distance (MRD) Carcharhiniformes",
+                               './figures/distance_vs_Car_mrd.pdf')
+save(distanceVcarmrd_stats, file = './data/stats/distanceVcarmrd_stats.Rdata')
+load('./data/stats/distanceVcarmrd_stats.Rdata')
+
+
+# richness vs mrd
+carmrdVcarrichness_stats <- make_plot(carcharhiniforme_mrd, 
+                                      carcharhiniforme_species_richness,
+                                "Mean Root Distance (MRD) Carcharhiniformes", 
+                                "Carcharhiniformes Species Richness",
+                                './figures/Car_mrd_vs_Car_richness.pdf')
+save(carmrdVcarrichness_stats, file = './data/stats/carmrdVcarrichness_stats.Rdata')
+load('./data/stats/carmrdVcarrichness_stats.Rdata')
+
+# mrd vs psv
+carpsvVcarmrd_stats <- make_plot(carcharhiniforme_psv, carcharhiniforme_mrd,
+                           "Phylogenetic Species Variance (PSV) Carcharhiniformes", 
+                           "Mean Root Distance (MRD) Carcharhiniformes",
+                           './figures/Car_psv_vs_Car_mrd.pdf')
+save(carpsvVcarmrd_stats, file = './data/stats/carpsvVcarmrd_stats.Rdata')
+load('./data/stats/carpsvVcarmrd_stats.Rdata')
+
+# psv vs richness
+carpsvVcarrichness_stats <- make_plot(carcharhiniforme_psv, 
+                                      carcharhiniforme_species_richness,
+                                "Phylogenetic Species Variance (PSV) Carcharhiniformes", 
+                                "Carcharhiniformes Species Richness",
+                                './figures/Car_psv_vs_Car_richness.pdf')
+save(carpsvVcarrichness_stats, file = './data/stats/carpsvVcarrichness_stats.Rdata')
+load('./data/stats/carpsvVcarrichness_stats.Rdata')
+
+
+
+# All with Lamniformes
+# temperature vs richness
+tempVlamrichness_stats <- make_plot(temperature, lamniformes_species_richness,
+                                    "Temperature (°C)", 
+                                    "Lamniformes Species Richness",
+                                    './figures/temperature_vs_Lam_richness.pdf')
+save(tempVlamrichness_stats, file = './data/stats/tempVlamrichness_stats.Rdata')
+load('./data/stats/tempVlamrichness_stats.Rdata')
+
+# temperature vs psv
+tempVlampsv_stats <- make_plot(temperature, lamniforme_psv,
+                               "Temperature (°C)", 
+                               "Phylogenetic Species Richness (PSV) Lamniformes",
+                               './figures/temperature_vs_Lam_psv.pdf')
+save(tempVlampsv_stats, file = './data/stats/tempVlampsv_stats.Rdata')
+load('./data/stats/tempVlampsv_stats.Rdata')
+
+# temperature vs mrd
+tempVlammrd_stats <- make_plot(temperature, lamniforme_mrd,
+                               "Temperature (°C)", 
+                               "Mean Root Distance (MRD) Lamniformes",
+                               './figures/temperature_vs_Lam_mrd.pdf')
+save(tempVlammrd_stats, file = './data/stats/tempVlammrd_stats.Rdata')
+load('./data/stats/tempVlammrd_stats.Rdata')
+
+
+# bathymetry vs richness
+bathVlamrichness_stats <- make_plot(bathymetry, lamniformes_species_richness,
+                                    "Depth (m)", 
+                                    "Lamniformes Species Richness",
+                                    './figures/bath_vs_Lam_richness.pdf')
+save(bathVlamrichness_stats, file = './data/stats/bathVlamrichness_stats.Rdata')
+load('./data/stats/bathVlamrichness_stats.Rdata')
+
+# bathymetry vs psv
+bathVlampsv_stats <- make_plot(bathymetry, lamniforme_psv,
+                               "Depth (m)", 
+                               "Phylogenetic Species Richness (PSV) Lamniformes",
+                               './figures/bath_vs_Lam_psv.pdf')
+save(bathVlampsv_stats, file = './data/stats/bathVlampsv_stats.Rdata')
+load('./data/stats/bathVlampsv_stats.Rdata')
+
+# bathymetry vs mrd
+bathVlammrd_stats <- make_plot(bathymetry, lamniforme_mrd,
+                               "Depth (m)", 
+                               "Mean Root Distance (MRD) Lamniformes",
+                               './figures/bath_vs_Lam_mrd.pdf')
+save(bathVlammrd_stats, file = './data/stats/bathVlammrd_stats.Rdata')
+load('./data/stats/bathVlammrd_stats.Rdata')
+
+
+# distance vs richness
+distanceVlamrichness_stats <- make_plot(distance_from_coast, 
+                                        lamniformes_species_richness,
+                                        "Distance (km)", 
+                                        "Lamniformes Species Richness",
+                                        './figures/distance_vs_Lam_richness.pdf')
+save(distanceVlamrichness_stats, file = './data/stats/distanceVlamrichness_stats.Rdata')
+load('./data/stats/distanceVlamrichness_stats.Rdata')
+
+# distance vs psv
+distanceVlampsv_stats <- make_plot(distance_from_coast, lamniforme_psv,
+                                   "Distance (km)", 
+                                   "Phylogenetic Species Richness (PSV) Lamniformes",
+                                   './figures/distance_vs_Lam_psv.pdf')
+save(distanceVlampsv_stats, file = './data/stats/distanceVlampsv_stats.Rdata')
+load('./data/stats/distanceVlampsv_stats.Rdata')
+
+# distance vs mrd
+distanceVlammrd_stats <- make_plot(distance_from_coast, lamniforme_mrd,
+                                   "Distance (km)", 
+                                   "Mean Root Distance (MRD) Lamniformes",
+                                   './figures/distance_vs_Lam_mrd.pdf')
+save(distanceVlammrd_stats, file = './data/stats/distanceVlammrd_stats.Rdata')
+load('./data/stats/distanceVlammrd_stats.Rdata')
+
+
+# richness vs mrd
+lammrdVlamrichness_stats <- make_plot(lamniforme_mrd, 
+                                      lamniformes_species_richness,
+                                      "Mean Root Distance (MRD) Lamniformes", 
+                                      "Lamniformes Species Richness",
+                                      './figures/Lam_mrd_vs_Lam_richness.pdf')
+save(lammrdVlamrichness_stats, file = './data/stats/lammrdVlamrichness_stats.Rdata')
+load('./data/stats/lammrdVlamrichness_stats.Rdata')
+
+# mrd vs psv
+lampsvVlammrd_stats <- make_plot(lamniforme_psv, lamniforme_mrd,
+                                 "Phylogenetic Species Variance (PSV) Lamniformes", 
+                                 "Mean Root Distance (MRD) Lamniformes",
+                                 './figures/Lam_psv_vs_Lam_mrd.pdf')
+save(lampsvVlammrd_stats, file = './data/stats/lampsvVlammrd_stats.Rdata')
+load('./data/stats/lampsvVlammrd_stats.Rdata')
+
+# psv vs richness
+lampsvVlamrichness_stats <- make_plot(lamniforme_psv, 
+                                      lamniformes_species_richness,
+                                      "Phylogenetic Species Variance (PSV) Lamniformes", 
+                                      "Lamniformes Species Richness",
+                                      './figures/Lam_psv_vs_Lam_richness.pdf')
+save(lampsvVlamrichness_stats, file = './data/stats/lampsvVlamrichness_stats.Rdata')
+load('./data/stats/lampsvVlamrichness_stats.Rdata')
+
+
+
+
+
 
 
 # richness vs area

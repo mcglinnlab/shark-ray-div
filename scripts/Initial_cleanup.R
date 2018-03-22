@@ -54,6 +54,7 @@ load('./data/raster/salinity_raster.Rdata')
 bathy <- raster('./data/Environment/ETOPO1_Ice_c_gmt4.grd')
 proj4string(bathy) = CRS("+proj=longlat +datum=WGS84")
 bathy_raster <- projectRaster(bathy, oceans_raster)
+values(bathy_raster)[values(bathy_raster) > 0] <- NA
 save(bathy_raster, file = './data/raster/bathy_raster.Rdata')
 load('./data/raster/bathy_raster.Rdata')
 
