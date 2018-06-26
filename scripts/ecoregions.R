@@ -50,20 +50,124 @@ save(indopacific_stack, file = './data/raster/indopacific_stack.Rdata')
 load('./data/raster/indopacific_stack.Rdata')
 
 # creating dir
-trop_atlantic_names <- vector("list", length = 6)
+# Pull_names function to pull out names of species in the realm
+# x = res_stack
+pull_names <- function(x) {
+names_list <- vector("list", length = 6)
+s <- vector("list", length = 6)
 for (i in 1:6) {
   for (j in 1:534) {
     #print(any(trop_atlantic_stack[[i]][[j]]@data@values==1))
-    if (sum(trop_atlantic_stack[[i]][[j]]@data@values==1,na.rm=T)>0)
+    if (sum(x[[i]][[j]]@data@values==1,na.rm=T)>0)
       {
-      trop_atlantic_names[[i]][[j]] <- trop_atlantic_stack[[i]][[j]]@data@names
-      } else {trop_atlantic_names[[i]][[j]] <- NA}
+      names_list[[i]][[j]] <- x[[i]][[j]]@data@names
+      } else {names_list[[i]][[j]] <- NA}
+  }
+  s[[i]] <- names_list[[i]][which(!(is.na(names_list[[i]])))]
+}
+return(s)
+}
+
+trop_atlantic_names <- pull_names(trop_atlantic_stack)
+indopacific_names <- pull_names(indopacific_stack)
+    
+dir.create('./data/tropical_atlantic')
+dir.create('./data/indopacific')
+
+ta_name_sub <- lapply(trop_atlantic_names[[6]], function(x)
+  paste0(x, '.json'))
+ta_name_sub <- gsub('_', ' ', ta_name_sub)
+for (i in ta_name_sub) {
+  file.copy(from = paste0('./data/polygon/', i), to = 'data/tropical_atlantic')
+}
+
+ip_name_sub <- lapply(indopacific_names[[1]], function(x)
+  paste0(x, '.json'))
+ip_name_sub <- gsub('_', ' ', ip_name_sub)
+for (i in ip_name_sub) {
+  file.copy(from = paste0('./data/polygon/', i), to = 'data/indopacific')
+}
+
+# phylogenetic metrics for realms
+
+source('./scripts/Phylogenetic_metrics.R')
+
+trop_atlantic_tree <- mini_tree('./data/tropical_atlantic')
+indopacific_tree <- mini_tree('./data/indopacific')
+
+trop_atlantic_mat <- com_mat('./data/tropical_atlantic', trop_atlantic_tree, 
+                             trop_atlantic_stack)
+indopacific_mat <- com_mat('./data/indopacific', indopacific_tree, 
+                           indopacific_stack)
+
+# mean root distance for ecoregions
+  phylo_bl1 <- compute.brlen(trop_atlantic_tree, 1)
+  all_dist <- dist.nodes(phylo_bl1)
+  root_dist <- all_dist[length(trop_atlantic_tree$tip.label) + 1, 
+                        1:length(trop_atlantic_tree$tip.label)]
+  tips_to_root <- data.frame(spp.name=trop_atlantic_tree$tip.label, root_dist)
+  
+  mrd_test_list <- vector("list", length = length(trop_atlantic_mat)) 
+  for (i in 1:length(trop_atlantic_mat)) {
+    allspecies = colnames(trop_atlantic_mat[[i]])
+    mrd_test_list[[i]] = rep(0, nrow(trop_atlantic_mat[[i]]))
+    for(j in 1:nrow(trop_atlantic_mat[[i]])) {
+      sp_list = data.frame(spp.name = allspecies[trop_atlantic_mat[[i]][j, ] == 1])
+      if (nrow(sp_list) > 0) {
+        root_dist_tot <- merge(sp_list, tips_to_root, sort = F)
+        mrd_test_list[[i]][j] <- mean(root_dist_tot$root_dist)
+      }
+    }
+  }
+  
+  load('./data/raster/trop_atlantic_list.Rdata')
+  trop_atlantic_mrd <- vector("list", length = 6)
+  pdf('./figures/trop_atlantic_mrd.pdf')
+  for (i in 1:6) {
+    mrd_raster <- trop_atlantic_list[[i]]
+    mrd_raster@data@values <- mrd_test_list[[i]]
+    plot(mrd_raster)
+    plot(continents, add = T, col = "black")
+    trop_atlantic_mrd[[i]] <- mrd_raster
+  }
+  dev.off()
+
+save(trop_atlantic_mrd, file = './data/raster/trop_atlantic_mrd.Rdata')
+load('./data/raster/trop_atlantic_mrd.Rdata')
+
+phylo_bl1 <- compute.brlen(indopacific_tree, 1)
+all_dist <- dist.nodes(phylo_bl1)
+root_dist <- all_dist[length(indopacific_tree$tip.label) + 1, 
+                      1:length(indopacific_tree$tip.label)]
+tips_to_root <- data.frame(spp.name=indopacific_tree$tip.label, root_dist)
+
+mrd_test_list <- vector("list", length = length(indopacific_mat)) 
+for (i in 1:length(indopacific_mat)) {
+  allspecies = colnames(indopacific_mat[[i]])
+  mrd_test_list[[i]] = rep(0, nrow(indopacific_mat[[i]]))
+  for(j in 1:nrow(indopacific_mat[[i]])) {
+    sp_list = data.frame(spp.name = allspecies[indopacific_mat[[i]][j, ] == 1])
+    if (nrow(sp_list) > 0) {
+      root_dist_tot <- merge(sp_list, tips_to_root, sort = F)
+      mrd_test_list[[i]][j] <- mean(root_dist_tot$root_dist)
+    }
   }
 }
 
+load('./data/raster/indopacific_list.Rdata')
+indopacific_mrd <- vector("list", length = 6)
+pdf('./figures/indopacific_mrd.pdf')
+for (i in 1:6) {
+  mrd_raster <- indopacific_list[[i]]
+  mrd_raster@data@values <- mrd_test_list[[i]]
+  plot(mrd_raster)
+  plot(continents, add = T, col = "black")
+  indopacific_mrd[[i]] <- mrd_raster
+}
+dev.off()
 
+indopacific_mrd <- mrd_runplot(indopacific_tree, indopacific_mat, 
+                               './figures/indopacific_mrd.pdf')
 
-# phylogenetic metrics for realms
-source('./scripts/Phylogenetic_metrics.R')
-
-
+save(indopacific_mrd, file = './data/raster/indopacific_mrd.Rdata')
+load('./data/raster/indopacific_mrd.Rdata')
