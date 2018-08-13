@@ -55,11 +55,12 @@ i <- 1
 mat_list <- vector("list", length = length(sp_res_stack))
 for (j in 1:6) {
     mat_list[[j]] = matrix(NA, ncol = sum(test_species), 
-                            nrow=length(sp_res_stack[[j]][[i]]@data@values))
+                            nrow=length(sp_res_stack[[j]][[i]]))
     colnames(mat_list[[j]]) = species_names_poly[test_species]
     icol = 1
     for (i in which(test_species)) {
-         mat_list[[j]][ , icol] = sp_res_stack[[j]][[i]]@data@values
+         mat_list[[j]][ , icol] = extract(sp_res_stack[[j]][[i]], 
+                                          1:nrow(mat_list[[j]]))
          icol = icol + 1
     }
     mat_list[[j]] = ifelse(is.na(mat_list[[j]]), 0, mat_list[[j]])
@@ -124,7 +125,7 @@ for (i in 1:6) {
 pdf('./figures/pd_rasters.pdf')
 pd_raster_list <- vector("list", length = 6)
 for (i in 1:6) {
-     pd_raster <- sp_res_stack[[i]][[1]]
+     pd_raster <- species_richness[[i]]
      pd_raster@data@values <- pd_test_list[[i]]$PD
      plot(pd_raster)
      plot(continents, add = T, col = "black")
@@ -138,7 +139,7 @@ load('./data/raster/pd_raster_list.Rdata')
 pdf('./figures/psv_rasters.pdf')
 psv_raster_list <- vector("list", length = 6)
 for (i in 1:6) {
-     psv_raster <- sp_res_stack[[i]][[1]]
+     psv_raster <- species_richness[[i]]
      psv_raster@data@values <- psv_test_list[[i]]$PSVs
      plot(psv_raster)
      plot(continents, add = T, col = "black")
@@ -152,7 +153,7 @@ load('./data/raster/psv_raster_list.Rdata')
 pdf('./figures/psr_rasters.pdf')
 psr_raster_list <- vector("list", length = 6)
 for (i in 1:6) {
-  psr_raster <- sp_res_stack[[i]][[1]]
+  psr_raster <- species_richness[[i]]
   psr_raster@data@values <- psr_test_list[[i]]$PSR
   plot(psr_raster)
   plot(continents, add = T, col = "black")
@@ -200,10 +201,10 @@ for (i in 1:length(mat_list)) {
 save(beta_list, file = './data/raster/beta_list.Rdata')
 
 #beta rasters
-beta_raster_list <- vector("list", length = length(raster_res_list))
+beta_raster_list <- vector("list", length = 6)
 pdf('./figures/beta_rasters.pdf')
-for (i in 1:9) {
-  beta_raster <- raster_res_list[[i]][[1]]
+for (i in 1:6) {
+  beta_raster <- species_richness[[i]]
   beta_raster@data@values <- beta_list[[i]]
   plot(beta_raster)
   plot(continents, add = T, col = "black")

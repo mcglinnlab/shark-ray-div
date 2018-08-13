@@ -6,263 +6,151 @@ library(foreach)
 library(maps)
 library(maptools)
 
-# read in the ocean
-oceans <- readOGR(dsn = "./data/Environment", layer = "ne_10m_ocean")
 
-# create a global raster layer
-oceans <- spTransform(oceans, CRS("+proj=cea +units=km"))
-plot(oceans)
-oceans_raster <- raster(oceans)
-res(oceans_raster) <- 110
-
-# saving the world raster grid
-save(oceans_raster, file = './data/raster/oceans_raster.Rdata')
-load('./data/raster/oceans_raster.Rdata')
-
-# making continents polygon
-continents <- shapefile('./data/continent/continent')
-continents <- spTransform(continents, CRS("+proj=cea +units=km"))
-
-# rasterize species polygons to the 110 scale
-# then write them to file
-sp_poly_files <- dir("./data/polygon")
-sp_raster_files <- sub("json", "grd", sp_poly_files)
-sp_raster_files <- sub(" ", "_", sp_raster_files)
-
-dir.create("./data/raster/sp")
-
-cl <- makeCluster(24) 
-registerDoParallel(cl) 
-#clusterExport(cl, list('sp_poly_files', 'sp_raster_files'))
-
-foreach(i = seq_along(sp_poly_files),
-        .packages = c("raster", "rgdal")) %dopar% {
-     # read in 
-     temp_poly = readOGR(dsn = paste0("./data/polygon/", sp_poly_files[i]),
+# richness rasterize function
+# w = directory where all the shape files are ('./data/polygon')
+# y = directory to be created ('./data/raster/sp')
+# output value is a new res_stack, name it and save it accordingly
+richness_rasterize <- function(w, y) {
+  load('./data/raster/oceans_raster.Rdata')
+  sp_poly_files <- dir(w)
+  sp_raster_files <- sub("json", "grd", sp_poly_files)
+  sp_raster_files <- sub(" ", "_", sp_raster_files)
+  
+  dir.create(y)
+  
+  cl <- makeCluster(24) 
+  registerDoParallel(cl) 
+  #clusterExport(cl, list('sp_poly_files', 'sp_raster_files'))
+  
+  foreach(i = seq_along(sp_poly_files),
+          .packages = c("raster", "rgdal")) %dopar% {
+            # read in 
+            temp_poly = readOGR(dsn = paste0(w, "/", sp_poly_files[i]),
                                 layer = "OGRGeoJSON")
-     # convert projection to cea
-     temp_poly = spTransform(temp_poly, CRS("+proj=cea +units=km"))
-     # add field that will provide values when rasterized
-     temp_poly@data$occur = 1
-     # rasterize
-     sp_raster = rasterize(temp_poly, oceans_raster, field = 'occur')
-     writeRaster(sp_raster, 
-                 filename = paste0("./data/raster/sp/", sp_raster_files[i]),
-                 datatype = "LOG1S", overwrite = TRUE)
+            # convert projection to cea
+            temp_poly = spTransform(temp_poly, CRS("+proj=cea +units=km"))
+            # add field that will provide values when rasterized
+            temp_poly@data$occur = 1
+            # rasterize
+            sp_raster = rasterize(temp_poly, oceans_raster, field = 'occur')
+            writeRaster(sp_raster, 
+                        filename = paste0(y, "/", sp_raster_files[i]),
+                        datatype = "LOG1S", overwrite = TRUE)
+          }
+  stopCluster(cl)
+
+  sp_stack = stack(sapply(sp_raster_files, function(x) 
+    paste0(y, "/", x)))
+  names(sp_stack) = sub('.grd', ' ', names(sp_stack))
+  
+  # create a list of stack at each resultion
+  factor_val <- c(2, 4, 8, 16, 32)
+  res_stack <- lapply(factor_val, function(x) 
+    aggregate(sp_stack, fac = x, fun = sum) > 0)
+  res_stack <- c(sp_stack, res_stack)
+  return(res_stack)
 }
-stopCluster(cl)
 
-# stack rasterized files and aggregate to other scales
 
-sp_stack = stack(sapply(sp_raster_files, function(x) 
-                 paste0("./data/raster/sp/", x)))
-names(sp_stack) = sub('.grd', ' ', names(sp_stack))
-
-# create a list of stack at each resultion
-factor_val <- c(2, 4, 8, 16, 32)
-sp_res_stack = lapply(factor_val, function(x) 
-                      aggregate(sp_stack, fac = x, fun = sum) > 0)
-sp_res_stack <- c(sp_stack, sp_res_stack)
-
-save(sp_res_stack, file = './data/raster/sp_res_stack.Rdata')
-load('./data/raster/sp_res_stack.Rdata')
-
+# richness_plot function  
 # creating a species richness layer for each resolution
-species_richness = lapply(sp_res_stack, function(x)
-                  calc(x, fun = sum, na.rm = T))
-
-pdf('./figures/species_richness_maps.pdf')
-for (i in 1:6) {
-     test <- rasterize(continents, species_richness[[i]], getCover = T)
-     is.na(values(species_richness[[i]])) <- values(test) > 90
-     plot(species_richness[[i]], 
-          main=paste('resolution =', res(species_richness[[i]])))
-     plot(continents, add = T, col = "black")
+# y = res_stack created in above function (sp_res_stack)
+# w = file path for pdf ('./figures/species_richness_maps.pdf')
+# output is the richness list, name and save accordingly
+richness_plot <- function(y, w) {
+  richness_list = lapply(y, function(x)
+    calc(x, fun = sum, na.rm = T))
+  
+  pdf(w)
+  for (i in 1:6) {
+    test <- rasterize(continents, richness_list[[i]], getCover = T)
+    is.na(values(richness_list[[i]])) <- values(test) > 90
+    plot(richness_list[[i]], 
+         main=paste('resolution =', res(richness_list[[i]])))
+    plot(continents, add = T, col = "black")
+  }
+  dev.off()
+  return(richness_list)
 }
-dev.off()
 
-
+# Taxonomic richness rasterize and plot
+sp_res_stack <- richness_rasterize('./data/polygon', './data/raster/sp')
+save(sp_res_stack, file = './data/raster/sp_res_stack.Rdata')
+species_richness <- richness_plot(sp_res_stack, './figures/species_richness_maps.pdf')
 save(species_richness, file = './data/raster/species_richness.Rdata')
 load('./data/raster/species_richness.Rdata')
 
-# masking area of continents
-pdf('./figures/area_test.pdf')
-for (i in 1:6) {
-     test <- rasterize(continents, species_richness[[i]], getCover = T)
-     is.na(values(species_richness[[i]])) <- values(test) > 90
-     plot(species_richness[[i]])
-}
-dev.off()
-
-# area
-area_list <- vector("list", length = 6)
-pdf('./figures/area.pdf')
-for (i in 1:6) {
-  area_raster <- rasterize(continents, species_richness[[i]], getCover = T)
-  plot(area_raster)
-  plot(continents, add = T, col = 'black')
-  area_list[[i]] <- area_raster
-}
-dev.off()
-
-save(area_list, file = './data/raster/area_list.Rdata')
-
-
-# code to find the position of the max value
-indx <- which.max(species_richness[[1]])
-pos <- xyFromCell(species_richness, indx)
-pos
-
-# create a temperature raster
-temp <- read.csv('./data/Environment/temp.csv')
-head(temp)
-temp$Meandepth <- rowMeans(temp[,3:87], na.rm = TRUE)
-coordinates(temp) <- ~LONGITUDE + LATITUDE
-proj4string(temp) <- "+proj=longlat +datum=WGS84"
-temp <- spTransform(temp, CRS("+proj=cea +units=km"))
-temp_raster <- rasterize(temp, oceans_raster, 'Meandepth')
-temp_list <- lapply(factor_val, function (x)
-                    aggregate(temp_raster, fac = x, fun = mean))
-temp_list_sd <- lapply(factor_val, function (x)
-                      aggregate(temp_raster, fac = x, fun = sd))                    
-temp_list <- c(temp_raster, temp_list)
-temp_list_sd <- c(temp_raster, temp_list_sd)
-pdf('./figures/temperature_mean.pdf')
-for (i in seq_along(temp_list)) {
-     plot(temp_list[[i]], main = paste('resolution =', res(temp_raster)))
-     plot(continents, add = T, col = "black")
-}
-dev.off()
-pdf('./figures/temperature_sd.pdf')
-for (i in seq_along(temp_list_sd)) {
-  plot(temp_list_sd[[i]], main = paste('resolution =', res(temp_raster)))
-  plot(continents, add = T, col = "black")
-}
-dev.off()
-
-save(temp_list, file = './data/raster/temp_list.Rdata')
-save(temp_list_sd, file = './data/raster/temp_list_sd.Rdata')
-load('./data/raster/temp_list.Rdata')
-
-# chlorophyll
-chloro <- raster('./data/Environment/MY1DMM_CHLORA_2017-06-01_rgb_360x180.TIFF')
-chloro <- rasterToPolygons(chloro)
-chloro <- spTransform(chloro, CRS("+proj=cea +units=km"))
-chloro_ras <- rasterize(chloro, oceans_raster, 
-                        'MY1DMM_CHLORA_2017.06.01_rgb_360x180')
-chloro_list <- lapply(factor_val, function (x)
-  aggregate(chloro_ras, fac = x, fun = mean))
-chloro_list <- c(chloro_ras, chloro_list)
-pdf('./figures/chlorophyll.pdf')
-for (i in 1:6) {
-     plot(chloro_list[[i]], main = paste('resolution =', res(chloro_list[[i]])))
-     plot(continents, add = T, col = "black")
-}
-dev.off()
-
-save(chloro_list, file = './data/raster/chloro_list.Rdata')
-load('./data/raster/chloro_list.Rdata')
-
-# IUCN shark species richness
-iucn_poly_files <- dir("./data/IUCN")
-iucn_raster_files <- sub("json", "grd", iucn_poly_files)
-iucn_raster_files <- sub(" ", "_", iucn_raster_files)
-
-dir.create("./data/raster/iucn")
-
-cl <- makeCluster(24) 
-registerDoParallel(cl) 
-#clusterExport(cl, list('iucn_poly_files', 'iucn_raster_files'))
-
-foreach(i = seq_along(iucn_poly_files),
-        .packages = c("raster", "rgdal")) %dopar% {
-          # read in 
-          temp_poly = readOGR(dsn = paste0("./data/IUCN/", iucn_poly_files[i]),
-                              layer = "OGRGeoJSON")
-          # convert projection to cea
-          temp_poly = spTransform(temp_poly, CRS("+proj=cea +units=km"))
-          # add field that will provide values when rasterized
-          temp_poly@data$occur = 1
-          # rasterize
-          iucn_raster = rasterize(temp_poly, oceans_raster, field = 'occur')
-          writeRaster(iucn_raster, 
-                      filename = paste0("./data/raster/iucn/", iucn_raster_files[i]),
-                      datatype = "LOG1S", overwrite = TRUE)
-        }
-stopCluster(cl)
-
-# stack rasterized files and aggregate to other scales
-
-iucn_stack = stack(sapply(iucn_raster_files, function(x) 
-  paste0("./data/raster/iucn/", x)))
-names(iucn_stack) = sub('.grd', ' ', names(iucn_stack))
-
-# create a list of stack at each resultion
-factor_val <- c(2, 4, 8, 16, 32)
-iucn_res_stack = lapply(factor_val, function(x) 
-  aggregate(iucn_stack, fac = x, fun = sum) > 0)
-iucn_res_stack <- c(iucn_stack, iucn_res_stack)
-
+# IUCN richness rasterize and plot
+iucn_res_stack <- richness_rasterize('./data/IUCN', './data/raster/iucn')
 save(iucn_res_stack, file = './data/raster/iucn_res_stack.Rdata')
-load('./data/raster/iucn_res_stack.Rdata')
-
-# creating a species richness layer for each resolution
-iucn_richness = lapply(iucn_res_stack, function(x)
-  calc(x, fun = sum, na.rm = T))
-
-pdf('./figures/IUCN_richness_maps.pdf')
-for (i in 1:6) {
-  test <- rasterize(continents, iucn_richness[[i]], getCover = T)
-  is.na(values(iucn_richness[[i]])) <- values(test) > 90
-  plot(iucn_richness[[i]], 
-       main=paste('resolution =', res(iucn_richness[[i]])))
-  plot(continents, add = T, col = "black")
-}
-dev.off()
-
+iucn_richness <- richness_plot(iucn_res_stack, './figures/IUCN_maps.pdf')
 save(iucn_richness, file = './data/raster/iucn_richness.Rdata')
 load('./data/raster/iucn_richness.Rdata')
 
+# Carcharhiniformes rasterize and plot
+car_res_stack <- richness_rasterize('./data/Carcharhiniformes', './data/raster/car')
+save(car_res_stack, file = './data/raster/car_res_stack.Rdata')
+car_richness <- richness_plot(car_res_stack, './figures/Carcharhiniforme_richness.pdf')
+save(car_richness, file = './data/raster/car_richness.Rdata')
+load('./data/raster/car_richness.Rdata')
 
-# making a value for latitude
-latitude_list <- vector("list", length = length(res_list))
-for (i in seq_along(res_list)) {
-     oceans_p <- rasterToPoints(res_list[[i]])
-     oceans_p_df <- data.frame(oceans_p)
-     latitude <- oceans_p_df$y
-     latitude_list[[i]] <- latitude
-}
+# Lamniformes rasterize and plot
+lam_res_stack <- richness_rasterize('./data/Lamniformes', './data/raster/lam')
+save(lam_res_stack, file = './data/raster/lam_res_stack.Rdata')
+lam_richness <- richness_plot(lam_res_stack, './figures/Lamniforme_richness.pdf')
+save(lam_richness, file = './data/raster/lam_richness.Rdata')
+load('./data/raster/lam_richness.Rdata')
 
-# salinity
-salinity <- read.csv('./data/Environment/salinity.csv')
-salinity$Meandepth <- rowMeans(salinity[,3:86], na.rm = TRUE)
-coordinates(salinity) <- ~ Longitude + Latitude
-proj4string(salinity) <- "+proj=longlat +datum=WGS84"
-salinity <- spTransform(salinity, CRS("+proj=cea +units=km"))
-salinity_raster <- rasterize(salinity, oceans_raster, 'Meandepth')
-salinity_list <- lapply(factor_val, function (x)
-  aggregate(salinity_raster, fac = x, fun = mean))
-salinity_list <- c(salinity_raster, salinity_list)
-pdf('./figures/salinity.pdf')
-for (i in seq_along(factor_val)) {
-     plot(salinity_list[[i]], main = paste('resolution =', res(salinity_list[[i]])))
-     plot(continents, add = T, col = "black")
-}
-dev.off()
-
-save(salinity_list, file = './data/raster/salinity_list')
-load('./data/raster/salinity_list')
-
-# distance from coast
-coast_distance_list <- vector("list", length = length(res_list))
-pdf('./figures/distance_from_coast_unmasked.pdf')
-for (i in seq_along(res_list)) {
-  distance_raster <- setValues(res_list[[i]], 0)
-  distance_raster <- mask(distance_raster, mask_ras_list, inverse = T)
-  rd <- distance(distance_raster)
-  plot(rd, main = paste('resolution =', res(res_list[[i]])))
+# enviro_plot function to aggregate and plot environmental variables
+# y = environmental raster from initial_cleanup
+# w = file path for pdf
+# output is raster list, name and save accordingly
+enviro_plot <- function(y, w) {
+  factor_val <- c(2, 4, 8, 16, 32)
+  enviro_list <- lapply(factor_val, function (x)
+  aggregate(y, fac = x, fun = mean))
+  enviro_list <- c(y, enviro_list)
+  return(enviro_list)
+  pdf(w)
+for (i in 1:6) {
+  plot(enviro_list[[i]], main = paste('resolution =', res(enviro_list[[i]])))
   plot(continents, add = T, col = "black")
-  coast_distance_list[[i]] <- rd
 }
 dev.off()
+}
 
+# temperature plot
+temp_list <- enviro_plot(temp_raster, './figures/temperature.pdf')
+save(temp_list, file = './data/raster/temp_list.Rdata')
+load('./data/raster/temp_list.Rdata')
+
+# chlorophyll plot
+chloro_list <- enviro_plot(chloro_raster, './figures/chlorophyll.pdf')
+save(chloro_list, file = './data/raster/chloro_list.Rdata')
+load('./data/raster/chloro_list.Rdata')
+
+# salinity plot
+salinity_list <- enviro_plot(salinity_raster, './figures/salinity.pdf')
+save(salinity_list, file = './data/raster/salinity_list.Rdata')
+load('./data/raster/salinity_list.Rdata')
+
+# bathymetry plot
+bathy_list <- enviro_plot(bathy_raster, './figures/bathymetry.pdf')
+save(bathy_list, file = './data/raster/bathy_list.Rdata')
+load('./data/raster/bathy_list.Rdata')
+
+# area plot
+area_list <- enviro_plot(area_raster, './figures/area.pdf')
+save(area_list, file = './data/raster/area_list.Rdata')
+load('./data/raster/area_list.Rdata')
+
+# distance from the coast plot
+distance_list <- enviro_plot(distance_raster, './figures/distance_from_coast.pdf')
+save(distance_list, file = './data/raster/distance_list.Rdata')
+load('./data/raster/distance_list.Rdata')
+
+# latitude plot
+latitude_list <- enviro_plot(latitude_raster, './figures/latitude.pdf')
+save(latitude_list, file = './data/raster/latitude_list.Rdata')
+load('./data/raster/latitude_list.Rdata')
