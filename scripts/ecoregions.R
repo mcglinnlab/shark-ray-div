@@ -203,6 +203,10 @@ for (i in ip_name_sub) {
 
 # phylogenetic metrics for realms
 
+load('./data/raster/mrd_raster_list.Rdata')
+load('./data/raster/psv_raster_list.Rdata')
+
+
 # mini_tree function to make subtrees based on clades
 # x = file directory to species polygons
 # y = name of new tree
@@ -363,19 +367,144 @@ load('./data/raster/indopacific_psv.Rdata')
 
 # beta for regions
 is.rooted(trop_atlantic_tree)
-multi2di(trop_atlantic_tree)
+trop_atlantic_tree <- multi2di(trop_atlantic_tree)
 maxlik.betasplit(trop_atlantic_tree, confidence.interval = "profile")
+
+# beta for trop atlantic = -0.97, conf interval -0.61 to -1.25
 plot(trop_atlantic_tree)
 identify.phylo(trop_atlantic_tree)
 trop_atlantic_tree <- root(trop_atlantic_tree, outgroup = 128, resolve.root = T)
 
 is.rooted(indopacific_tree)
-multi2di(indopacific_tree)
+indopacific_tree <- multi2di(indopacific_tree)
 maxlik.betasplit(indopacific_tree, confidence.interval = "profile")
 
+# beta for indopacific = -0.79, conf interval -0.42 to -1.08
 
 # energy gradient for regions
 load('./data/raster/temp_list.Rdata')
 
 trop_atlantic_temp <- realm_crop(temp_list, tropical_atlantic)
+save(trop_atlantic_temp, file = './data/raster/trop_atlantic_temp.Rdata')
+
 indopacific_temp <- realm_crop(temp_list, central_indopacific)
+save(indopacific_temp, file = './data/raster/indopacific_temp.Rdata')
+
+
+# data analysis
+data_list_trop <- vector("list", length = 6)
+for (i in 1:6) {
+  coo_trop <- coordinates(trop_atlantic_list[[i]])
+  longitude_trop <- coo_trop[,1]
+  latitude_trop <- coo_trop[,2]
+  dat <- data.frame(longitude_trop, latitude_trop, values(trop_atlantic_list[[i]]), 
+                    values(trop_atlantic_mrd[[i]]), values(trop_atlantic_psv[[i]]), 
+                    values(trop_atlantic_temp[[i]]))
+  colnames(dat) <- c("tropical_atlantic_longitude", "tropical_atlantic_latitude", 
+                     "tropical_atlantic_richness", "tropical_atlantic_mrd", "tropical_atlantic_psv",
+                     "tropical_atlantic_temperature")
+  data_list_trop[[i]] <- dat
+}
+save(data_list_trop, file = "data/raster/data_list_trop.Rdata")
+
+
+data_list_indo <- vector("list", length = 6)
+for (i in 1:6) {
+  coo_indo <- coordinates(indopacific_list[[i]])
+  longitude_indo <- coo_indo[,1]
+  latitude_indo <- coo_indo[,2]
+  dat <- data.frame(longitude_indo, latitude_indo,
+                    values(indopacific_list[[i]]), values(indopacific_mrd[[i]]),
+                    values(indopacific_psv[[i]]), values(indopacific_temp[[i]]))
+  colnames(dat) <- c("indopacific_longitude", "indopacific_latitude",
+                     "indopacific_richness", "indopacific_mrd", "indopacifc_psv", "indopacific_temperature")
+  data_list_indo[[i]] <- dat
+}
+save(data_list_indo, file = './data/raster/data_list_indo.Rdata')
+
+# make_plot function plots two variables against one another
+# x = x axis variable, must be chosen from data_list, in character form
+# y = y axis variable, must be chosen from data_list, in character form
+# z = x axis label as character string
+# w = y axis label as character string
+# v = pdf file
+# output are statistics summary, name and save accordingly
+make_plot_trop <- function(x, y, z, w, v) {
+  load('./data/raster/data_list_trop.Rdata')
+  load('./data/raster/trop_atlantic_list.Rdata')
+  stats <- vector("list", length = 6)
+  pdf(v)
+  for (i in 1:6) {
+    column1 <- substitute(x)
+    column2 <- substitute(y)
+    lin <- lm(eval(column2, data_list_trop[[1]]) ~ eval(column1, data_list_trop[[1]])) 
+    plot(eval(column1, data_list_trop[[i]]), eval(column2, data_list_trop[[i]]), 
+         main = paste('resolution =', res(trop_atlantic_list[[i]])), 
+         xlab = z, ylab = w)
+    abline(lin, col = 'red')
+    stats[[i]] <- summary(lin)
+  }
+  dev.off()
+  return(stats)
+} 
+
+
+# make_plot function plots two variables against one another
+# x = x axis variable, must be chosen from data_list, in character form
+# y = y axis variable, must be chosen from data_list, in character form
+# z = x axis label as character string
+# w = y axis label as character string
+# v = pdf file
+# output are statistics summary, name and save accordingly
+make_plot_indo <- function(x, y, z, w, v) {
+  load('./data/raster/data_list_indo.Rdata')
+  load('./data/raster/indopacific_list.Rdata')
+  stats <- vector("list", length = 6)
+  pdf(v)
+  for (i in 1:6) {
+    column1 <- substitute(x)
+    column2 <- substitute(y)
+    lin <- lm(eval(column2, data_list_indo[[i]]) ~ eval(column1, data_list_indo[[i]])) 
+    plot(eval(column1, data_list_indo[[i]]), eval(column2, data_list_indo[[i]]), 
+         main = paste('resolution =', res(indopacific_list[[i]])), 
+         xlab = z, ylab = w)
+    abline(lin, col = 'red')
+    stats[[i]] <- summary(lin)
+  }
+  dev.off()
+  return(stats)
+}
+
+# regressions for tropical atlantic
+trop_atlantic_richnessVtemp <- make_plot_trop(tropical_atlantic_temperature, tropical_atlantic_richness, 
+                                              "Temperature (°C)", "Tropical Atlantic Richness", 
+                                              './figures/trop_atlantic_vs_temp.pdf')
+save(trop_atlantic_richnessVtemp, file = './data/stats/trop_atlantic_richnessVtemp.Rdata')
+
+trop_atlantic_richnessVmrd <- make_plot_trop(tropical_atlantic_mrd, tropical_atlantic_richness,
+                                             "Mean Root Distance (MRD) Tropical Atlantic", 
+                                             "Tropical Atlantic Richness", 
+                                             './figures/trop_atlantic_mrd_vs_richness.pdf')
+save(trop_atlantic_richnessVmrd, file = './data/stats/trop_atlantic_richnessVmrd.Rdata')
+
+trop_atlantic_tempVmrd <- make_plot_trop(tropical_atlantic_temperature, tropical_atlantic_mrd, 
+                                         "Temperature (°C)", "Mean Root Distance (MRD) Tropical Atlantic",
+                                         './figures/trop_atlantic_temp_vs_mrd.pdf')  
+save(trop_atlantic_tempVmrd, file = './data/stats/trop_atlantic_tempVmrd.Rdata')
+
+# regressions for indopacific
+indopacific_richnessVtemp <- make_plot_indo(indopacific_temperature, indopacific_richness, 
+                                                "Temperature (°C)", "Central Indopacific Richness",
+                                                './figures/indopacific_richness_vs_temp.pdf')
+save(indopacific_richnessVtemp, file = './data/stats/indopacific_richnessVtemp.Rdata')
+
+indopacific_richnessVmrd <- make_plot_indo(indopacific_mrd, indopacific_richness, 
+                                           "Mean Root Distance (MRD) Central Indopacific", 
+                                           "Central Indopaific Richness", 
+                                           './figures/indopacific_mrd_vs_richness.pdf')
+save(indopacific_richnessVmrd, file = './data/stats/indopacific_richnessVmrd.Rdata')
+
+indopacific_tempVmrd <- make_plot_indo(indopacific_temperature, indopacific_mrd, "Temperature (°C)",
+                                       "Mean Root Distance (MRD) Central Indopacific",
+                                       './figures/indopacific_temp_vs_mrd.pdf')
+save(indopacific_tempVmrd, file = './data/stats/indopacific_tempVmrd.Rdata')
