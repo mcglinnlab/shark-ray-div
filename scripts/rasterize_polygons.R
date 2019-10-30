@@ -54,14 +54,15 @@ richness_rasterize <- function(poly_files, raster_files) {
 
 # richness_plot function  
 # creating a species richness layer for each resolution
-# y = res_stack created in above function (sp_res_stack)
-# w = file path for pdf ('./figures/species_richness_maps.pdf')
+# res_stack = res_stack created in above function (sp_res_stack)
+# figure_name = file path for pdf ('./figures/species_richness_maps.pdf')
+# mask = continents shapefile
 # output is the richness list, name and save accordingly
-richness_plot <- function(y, w, mask) {
-  richness_list = lapply(y, function(x)
+richness_plot <- function(res_stack, figure_name, mask) {
+  richness_list = lapply(res_stack, function(x)
     calc(x, fun = sum, na.rm = T))
   
-  pdf(w)
+  pdf(figure_name)
   for (i in 1:6) {
     test <- rasterize(mask, richness_list[[i]], getCover = T)
     richness_list[[i]][values(test) > 0.9] <- NA
@@ -108,13 +109,13 @@ load('./data/raster/lam_richness.Rdata')
 # y = environmental raster from initial_cleanup
 # w = file path for pdf
 # output is raster list, name and save accordingly
-enviro_plot <- function(y, w, mask) {
+enviro_plot <- function(enviro_raster, figure_name, mask) {
   factor_val <- c(2, 4, 8, 16, 32)
   enviro_list <- lapply(factor_val, function (x)
-  aggregate(y, fac = x, fun = mean))
-  enviro_list <- c(y, enviro_list)
+  aggregate(enviro_raster, fac = x, fun = mean))
+  enviro_list <- c(enviro_raster, enviro_list)
   return(enviro_list)
-  pdf(w)
+  pdf(figure_name)
 for (i in 1:6) {
   test <- rasterize(mask, enviro_list[[i]], getCover = T)
   enviro_list[[i]][values(test) > 0.9] <- NA
