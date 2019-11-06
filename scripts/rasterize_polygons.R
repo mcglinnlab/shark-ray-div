@@ -9,9 +9,11 @@ library(maptools)
 # richness rasterize function
 # poly_files = directory where all the shape files are ('./data/polygon')
 # raster_files = directory to be created ('./data/raster/sp')
+# base_raster = raster upon which data will be added
+# wanted_crs = projection the raster will be in
 # output value is a new res_stack, name it and save it accordingly
-richness_rasterize <- function(poly_files, raster_files) {
-  load('./data/raster/oceans_raster.Rdata')
+load('./data/raster/oceans_raster.Rdata')
+richness_rasterize <- function(poly_files, raster_files, base_raster, wanted_crs) {
   sp_poly_files <- dir(poly_files)
   sp_raster_files <- sub("json", "grd", sp_poly_files)
   sp_raster_files <- sub(" ", "_", sp_raster_files)
@@ -28,11 +30,11 @@ richness_rasterize <- function(poly_files, raster_files) {
             temp_poly = readOGR(dsn = paste0(poly_files, "/", sp_poly_files[i]),
                                 layer = sub(".json", "", sp_poly_files[i]))
             # convert projection to cea
-            temp_poly = spTransform(temp_poly, CRS("+proj=cea +units=km"))
+            temp_poly = spTransform(temp_poly, CRS(wanted_crs))
             # add field that will provide values when rasterized
             temp_poly@data$occur = 1
             # rasterize
-            sp_raster = rasterize(temp_poly, oceans_raster, field = 'occur')
+            sp_raster = rasterize(temp_poly, base_raster, field = 'occur')
             writeRaster(sp_raster, 
                         filename = paste0(raster_files, "/", sp_raster_files[i]),
                         datatype = "LOG1S", overwrite = TRUE)
@@ -50,6 +52,8 @@ richness_rasterize <- function(poly_files, raster_files) {
   res_stack <- c(sp_stack, res_stack)
   return(res_stack)
 }
+
+save(richness_rasterize, file = './functions/richness_rasterize.Rdata')
 
 
 # richness_plot function  
@@ -74,40 +78,47 @@ richness_plot <- function(res_stack, figure_name, mask) {
   return(richness_list)
 }
 
+save(richness_plot, file = './functions/richness_plot.Rdata')
+
 # Read in continent shapefile for mapping purposes
 load('./data/continent/continent_new')
 
 # Taxonomic richness rasterize and plot
-sp_res_stack <- richness_rasterize('./data/polygon', './data/raster/sp')
+sp_res_stack <- richness_rasterize('./data/polygon', './data/raster/sp', oceans_raster, 
+                                   "+proj=cea +units=km")
 save(sp_res_stack, file = './data/raster/sp_res_stack.Rdata')
 species_richness <- richness_plot(sp_res_stack, './figures/species_richness_maps.pdf', continents)
 save(species_richness, file = './data/raster/species_richness.Rdata')
 load('./data/raster/species_richness.Rdata')
 
 # IUCN richness rasterize and plot
-iucn_res_stack <- richness_rasterize('./data/IUCN', './data/raster/iucn')
+iucn_res_stack <- richness_rasterize('./data/IUCN', './data/raster/iucn', oceans_raster, 
+                                     "+proj=cea +units=km")
 save(iucn_res_stack, file = './data/raster/iucn_res_stack.Rdata')
 iucn_richness <- richness_plot(iucn_res_stack, './figures/IUCN_maps.pdf', continents)
 save(iucn_richness, file = './data/raster/iucn_richness.Rdata')
 load('./data/raster/iucn_richness.Rdata')
 
 # Carcharhiniformes rasterize and plot
-car_res_stack <- richness_rasterize('./data/Carcharhiniformes', './data/raster/car')
+car_res_stack <- richness_rasterize('./data/Carcharhiniformes', './data/raster/car', oceans_raster, 
+                                    "+proj=cea +units=km")
 save(car_res_stack, file = './data/raster/car_res_stack.Rdata')
 car_richness <- richness_plot(car_res_stack, './figures/Carcharhiniforme_richness.pdf', continents)
 save(car_richness, file = './data/raster/car_richness.Rdata')
 load('./data/raster/car_richness.Rdata')
 
 # Lamniformes rasterize and plot
-lam_res_stack <- richness_rasterize('./data/Lamniformes', './data/raster/lam')
+lam_res_stack <- richness_rasterize('./data/Lamniformes', './data/raster/lam', oceans_raster, 
+                                    "+proj=cea +units=km")
 save(lam_res_stack, file = './data/raster/lam_res_stack.Rdata')
 lam_richness <- richness_plot(lam_res_stack, './figures/Lamniforme_richness.pdf', continents)
 save(lam_richness, file = './data/raster/lam_richness.Rdata')
 load('./data/raster/lam_richness.Rdata')
 
 # enviro_plot function to aggregate and plot environmental variables
-# y = environmental raster from initial_cleanup
-# w = file path for pdf
+# enviro_raster = environmental raster from initial_cleanup
+# figure_name = file path for pdf
+#mask = continents mask
 # output is raster list, name and save accordingly
 enviro_plot <- function(enviro_raster, figure_name, mask) {
   factor_val <- c(2, 4, 8, 16, 32)
@@ -124,6 +135,8 @@ for (i in 1:6) {
 }
 dev.off()
 }
+
+save(enviro_plot, file = './functions/enviro_plot.Rdata')
 
 # temperature plot
 load('./data/raster/temp_raster.Rdata')
