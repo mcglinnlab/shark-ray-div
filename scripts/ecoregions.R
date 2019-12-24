@@ -1,3 +1,5 @@
+rm(list = ls())
+
 library(rgdal)
 library(sp)
 library(maps)
@@ -10,6 +12,8 @@ library(ape)
 library(phytools)
 library(picante)
 library(apTreeshape)
+
+source('./scripts/all_functions.R')
 
 # creating and transforming realms
 regions <- readOGR(dsn = "./data/continent", layer = "meow_ecos")
@@ -37,12 +41,12 @@ central_indopacific <- spTransform(central_indopacific, CRS("+proj=cea +lat_0=0 
 # cropping species richness based on realms
 
 # realm_crop function
-# x = output list
-# y = realm spatial object
-realm_crop <- function(x, y) {
+# species_raster
+# wanted_realm = realm spatial object
+realm_crop <- function(species_raster, wanted_realm) {
   temporary <- vector("list", length = 6)
   for (i in 1:6) {
-    ras <- intersect(x[[i]], y)
+    ras <- intersect(species_raster[[i]], wanted_realm)
     temporary[[i]] <- ras
   }
   return(temporary)
@@ -50,16 +54,14 @@ realm_crop <- function(x, y) {
 
 load('./data/raster/species_richness.Rdata')
 load('./data/raster/sp_res_stack.Rdata')
-continents <- shapefile('./data/continent/continent')
-continents <- spTransform(continents, CRS("+proj=cea +units=km"))
+load('./data/continent/continent_new.Rdata')
 continents_indo <- spTransform(continents, 
                                CRS("+proj=cea +lat_0=0 +lon_0=125 +units=km"))
 oceans <- readOGR(dsn = "./data/Environment", layer = "ne_10m_ocean")
-oceans <- spTransform(oceans, CRS("+proj=cea +lat_0=0 +lon_0=125 +units=km"))
-oceans_indo <- raster(oceans)
+oceans_indo <- spTransform(oceans, CRS("+proj=cea +lat_0=0 +lon_0=125 +units=km"))
+oceans_indo <- raster(oceans_indo)
 res(oceans_indo) <- 110
 save(oceans_indo, file = './data/raster/oceans_indo.Rdata')
-
 
 trop_atlantic_list <- realm_crop(species_richness, tropical_atlantic)
 save(trop_atlantic_list, file = './data/raster/trop_atlantic_list.Rdata')
@@ -71,81 +73,18 @@ load('./data/raster/trop_atlantic_stack.Rdata')
 
 pdf('./figures/tropical_atlantic_richness.pdf')
 for (i in 1:6) {
+  test <- rasterize(continents, trop_atlantic_list[[i]], getCover = T)
+  trop_atlantic_list[[i]][values(test) > 0.9] <- NA
   plot(trop_atlantic_list[[i]])
   plot(continents, add = T, col = "black")
 }
 dev.off()
 
 # recreating species richness in correct projection for indopacific
-# richness rasterize function
-# w = directory where all the shape files are ('./data/polygon')
-# y = directory to be created ('./data/raster/sp')
-# output value is a new res_stack, name it and save it accordingly
-richness_rasterize <- function(w, y) {
-  load('./data/raster/oceans_indo.Rdata')
-  sp_poly_files <- dir(w)
-  sp_raster_files <- sub("json", "grd", sp_poly_files)
-  sp_raster_files <- sub(" ", "_", sp_raster_files)
-  
-  dir.create(y)
-  
-  cl <- makeCluster(24) 
-  registerDoParallel(cl) 
-  #clusterExport(cl, list('sp_poly_files', 'sp_raster_files'))
-  
-  foreach(i = seq_along(sp_poly_files),
-          .packages = c("raster", "rgdal")) %dopar% {
-            # read in 
-            temp_poly = readOGR(dsn = paste0(w, "/", sp_poly_files[i]),
-                                layer = "OGRGeoJSON")
-            # convert projection to cea
-            temp_poly = spTransform(temp_poly, CRS("+proj=cea +lat_0=0 +lon_0=125 +units=km"))
-            # add field that will provide values when rasterized
-            temp_poly@data$occur = 1
-            # rasterize
-            sp_raster = rasterize(temp_poly, oceans_indo, field = 'occur')
-            writeRaster(sp_raster, 
-                        filename = paste0(y, "/", sp_raster_files[i]),
-                        datatype = "LOG1S", overwrite = TRUE)
-          }
-  stopCluster(cl)
-  
-  sp_stack = stack(sapply(sp_raster_files, function(x) 
-    paste0(y, "/", x)))
-  names(sp_stack) = sub('.grd', ' ', names(sp_stack))
-  
-  # create a list of stack at each resultion
-  factor_val <- c(2, 4, 8, 16, 32)
-  res_stack <- lapply(factor_val, function(x) 
-    aggregate(sp_stack, fac = x, fun = sum) > 0)
-  res_stack <- c(sp_stack, res_stack)
-  return(res_stack)
-}
+for_indo_stack <- richness_rasterize('./data/polygon', './data/raster/sp', oceans_indo, 
+                                     "+proj=cea +lat_0=0 +lon_0=125 +units=km")
 
-for_indo_stack <- richness_rasterize('./data/polygon', './data/raster/sp')
-
-# richness_plot function  
-# creating a species richness layer for each resolution
-# y = res_stack created in above function (sp_res_stack)
-# w = file path for pdf ('./figures/species_richness_maps.pdf')
-# output is the richness list, name and save accordingly
-richness_plot <- function(y, w) {
-  richness_list = lapply(y, function(x)
-    calc(x, fun = sum, na.rm = T))
-  
-  pdf(w)
-  for (i in 1:6) {
-    test <- rasterize(continents_indo, richness_list[[i]], getCover = T)
-    is.na(values(richness_list[[i]])) <- values(test) > 90
-    plot(richness_list[[i]], 
-         main=paste('resolution =', res(richness_list[[i]])))
-    plot(continents_indo, add = T, col = "black")
-  }
-  dev.off()
-  return(richness_list)
-}
-
-for_indo <- richness_plot(for_indo_stack, './figures/for_indo.pdf')
+for_indo <- richness_plot(for_indo_stack, './figures/for_indo.pdf', continents_indo)
 
 indopacific_list <- realm_crop(for_indo, central_indopacific)
 save(indopacific_list, file = './data/raster/indopacific_list.Rdata')
@@ -153,8 +92,10 @@ load('./data/raster/indopacific_list.Rdata')
 
 pdf('./figures/indopacific_richness.pdf')
 for (i in 1:6) {
+  test <- rasterize(continents_indo, indopacific_list[[i]], getCover = T)
+  indopacific_list[[i]][values(test) > 0.9] <- NA
   plot(indopacific_list[[i]])
-  #plot(continents_indo, add = T, col = "black")
+  plot(continents_indo, add = T, col = "black")
 }
 dev.off()
 
@@ -162,18 +103,18 @@ indopacific_stack <- realm_crop(for_indo_stack, central_indopacific)
 save(indopacific_stack, file = './data/raster/indopacific_stack.Rdata')
 load('./data/raster/indopacific_stack.Rdata')
 
-# creating dir
+# creating dir for phylogenetic functions
 # Pull_names function to pull out names of species in the realm
-# x = res_stack
-pull_names <- function(x) {
+# res_stack = res_stack of raster list wanted
+pull_names <- function(res_stack) {
 names_list <- vector("list", length = 6)
 s <- vector("list", length = 6)
 for (i in 1:6) {
   for (j in 1:534) {
     #print(any(trop_atlantic_stack[[i]][[j]]@data@values==1))
-    if (sum(x[[i]][[j]]@data@values==1,na.rm=T)>0)
+    if (sum(res_stack[[i]][[j]]@data@values==1,na.rm=T)>0)
       {
-      names_list[[i]][[j]] <- x[[i]][[j]]@data@names
+      names_list[[i]][[j]] <- res_stack[[i]][[j]]@data@names
       } else {names_list[[i]][[j]] <- NA}
   }
   s[[i]] <- names_list[[i]][which(!(is.na(names_list[[i]])))]
@@ -202,166 +143,58 @@ for (i in ip_name_sub) {
 }
 
 # phylogenetic metrics for realms
-
-load('./data/raster/mrd_raster_list.Rdata')
-load('./data/raster/psv_raster_list.Rdata')
-
-
-# mini_tree function to make subtrees based on clades
-# x = file directory to species polygons
-# y = name of new tree
-mini_tree <- function(x) {
-  names_poly <- dir(x)
-  names_poly <- sub(pattern = '.json', "", names_poly)
-  keep <- shark_tree_clean$tip.label %in% names_poly
-  drop <- shark_tree_clean$tip.label[!keep]
-  new_tree <- drop.tip(shark_tree_clean, drop)
-  return(new_tree)
-}
+load('./data/shark_tree_clean.Rdata')
 
 trop_atlantic_tree <- mini_tree('./data/tropical_atlantic')
 indopacific_tree <- mini_tree('./data/indopacific')
-
-# com_mat function makes community matrix for phylogenetic diversity
-# x = file directory of species
-# y = clade tree
-# z = res_stack of clade
-# output value is community matrix for specified clade, name accordingly
-com_mat <- function(x, y, z) {
-  names_poly <- dir(x)
-  names_poly <- sub(pattern = '.json', "", names_poly)
-  test_species <- names_poly %in% y$tip.label
-  i <- 1
-  mat_list <- vector("list", length = length(z))
-  for (j in 1:6) {
-    mat_list[[j]] = matrix(NA, ncol = sum(test_species), 
-                           nrow=length(z[[j]][[i]]))
-    colnames(mat_list[[j]]) = names_poly[test_species]
-    icol = 1
-    for (i in which(test_species)) {
-      mat_list[[j]][ , icol] = extract(z[[j]][[i]], 
-                                       1:nrow(mat_list[[j]]))
-      icol = icol + 1
-    }
-    mat_list[[j]] = ifelse(is.na(mat_list[[j]]), 0, mat_list[[j]])
-  }
-  return(mat_list)
-}
 
 trop_atlantic_mat <- com_mat('./data/tropical_atlantic', trop_atlantic_tree, 
                              trop_atlantic_stack)
 indopacific_mat <- com_mat('./data/indopacific', indopacific_tree, 
                            indopacific_stack)
 
-# mean root distance for ecoregions
-  phylo_bl1 <- compute.brlen(trop_atlantic_tree, 1)
-  all_dist <- dist.nodes(phylo_bl1)
-  root_dist <- all_dist[length(trop_atlantic_tree$tip.label) + 1, 
-                        1:length(trop_atlantic_tree$tip.label)]
-  tips_to_root <- data.frame(spp.name=trop_atlantic_tree$tip.label, root_dist)
-  
-  mrd_test_list <- vector("list", length = length(trop_atlantic_mat)) 
-  for (i in 1:length(trop_atlantic_mat)) {
-    allspecies = colnames(trop_atlantic_mat[[i]])
-    mrd_test_list[[i]] = rep(0, nrow(trop_atlantic_mat[[i]]))
-    for(j in 1:nrow(trop_atlantic_mat[[i]])) {
-      sp_list = data.frame(spp.name = allspecies[trop_atlantic_mat[[i]][j, ] == 1])
-      if (nrow(sp_list) > 0) {
-        root_dist_tot <- merge(sp_list, tips_to_root, sort = F)
-        mrd_test_list[[i]][j] <- mean(root_dist_tot$root_dist)
-      }
-    }
-  }
-  
-  load('./data/raster/trop_atlantic_list.Rdata')
-  trop_atlantic_mrd <- vector("list", length = 6)
-  pdf('./figures/trop_atlantic_mrd.pdf')
-  for (i in 1:6) {
-    mrd_raster <- trop_atlantic_list[[i]]
-    mrd_raster@data@values <- mrd_test_list[[i]]
-    plot(mrd_raster)
-    plot(continents, add = T, col = "black")
-    trop_atlantic_mrd[[i]] <- mrd_raster
-  }
-  dev.off()
+trop_atlantic_mrd <- mrd_runplot(trop_atlantic_tree, trop_atlantic_mat, continents, 
+                                 './figures/trop_atlantic_mrd.pdf', trop_atlantic_list)
+indopacific_mrd <- mrd_runplot(indopacific_tree, indopacific_mat, continents_indo, 
+                               './figures/indopacific_mrd.pdf', indopacific_list)
 
-save(trop_atlantic_mrd, file = './data/raster/trop_atlantic_mrd.Rdata')
-load('./data/raster/trop_atlantic_mrd.Rdata')
-
-phylo_bl1 <- compute.brlen(indopacific_tree, 1)
-all_dist <- dist.nodes(phylo_bl1)
-root_dist <- all_dist[length(indopacific_tree$tip.label) + 1, 
-                      1:length(indopacific_tree$tip.label)]
-tips_to_root <- data.frame(spp.name=indopacific_tree$tip.label, root_dist)
-
-mrd_test_list <- vector("list", length = length(indopacific_mat)) 
-for (i in 1:length(indopacific_mat)) {
-  allspecies = colnames(indopacific_mat[[i]])
-  mrd_test_list[[i]] = rep(0, nrow(indopacific_mat[[i]]))
-  for(j in 1:nrow(indopacific_mat[[i]])) {
-    sp_list = data.frame(spp.name = allspecies[indopacific_mat[[i]][j, ] == 1])
-    if (nrow(sp_list) > 0) {
-      root_dist_tot <- merge(sp_list, tips_to_root, sort = F)
-      mrd_test_list[[i]][j] <- mean(root_dist_tot$root_dist)
-    }
-  }
-}
-
-load('./data/raster/indopacific_list.Rdata')
-indopacific_mrd <- vector("list", length = 6)
-pdf('./figures/indopacific_mrd.pdf')
+# dividing mrd by its max to standardize units
 for (i in 1:6) {
-  mrd_raster <- indopacific_list[[i]]
-  mrd_raster@data@values <- mrd_test_list[[i]]
-  plot(mrd_raster)
-  indopacific_mrd[[i]] <- mrd_raster
+  max_wanted <- max(trop_atlantic_mrd[[i]]@data@values, na.rm = T)
+  new_ras <- calc(trop_atlantic_mrd[[i]], fun = function(x) x/max_wanted)
+  trop_atlantic_mrd[[i]] <- new_ras
+}
+save(trop_atlantic_mrd, file = './data/raster/trop_atlantic_mrd.Rdata')
+
+for (i in 1:6) {
+  max_wanted <- max(indopacific_mrd[[i]]@data@values, na.rm = T)
+  new_ras <- calc(indopacific_mrd[[i]], fun = function(x) x/max_wanted)
+  indopacific_mrd[[i]] <- new_ras
+}
+save(indopacific_mrd, file = './data/raster/indopacific_mrd.Rdata')
+
+# all indo plots still broken
+pdf('./figures/trop_atlantic_mrd.pdf')
+for (i in 1:6) {
+  plot(trop_atlantic_mrd[[i]])
+  plot(continents, add = T, col = "black")
 }
 dev.off()
 
-
-save(indopacific_mrd, file = './data/raster/indopacific_mrd.Rdata')
-load('./data/raster/indopacific_mrd.Rdata')
-
-# psv for regions
-psv_test_list <- vector("list", length = 6)
-  for (i in 1:6) {
-    psv_test <- psv(trop_atlantic_mat[[i]], trop_atlantic_tree)
-    psv_test_list[[i]] <- psv_test
-}
-  
-load('./data/raster/trop_atlantic_list.Rdata')
-pdf('./figures/trop_atlantic_psv.pdf')
-trop_atlantic_psv <- vector("list", length = 6)
+pdf('./figures/indopacific_mrd.pdf')
 for (i in 1:6) {
-    psv_raster <- trop_atlantic_list[[i]]
-    psv_raster@data@values <- psv_test_list[[i]]$PSVs
-    plot(psv_raster)
-    plot(continents, add = T, col = "black")
-    trop_atlantic_psv[[i]] <- psv_raster
+  plot(indopacific_mrd[[i]])
+  plot(continents_indo, add = T, col = "black")
 }
-  dev.off()
+dev.off()
+
+trop_atlantic_psv <- psv_runplot(trop_atlantic_tree, trop_atlantic_mat, continents, 
+                                 './figures/trop_atlantic_psv.pdf', trop_atlantic_list)
+indopacific_psv <- psv_runplot(indopacific_tree, indopacific_mat, continents_indo, 
+                               './figures/indopacific_psv.pdf', indopacific_list)
   
 save(trop_atlantic_psv, file = './data/raster/trop_atlantic_psv.Rdata')  
 load('./data/raster/trop_atlantic_psv.Rdata')
-
-
-psv_test_list <- vector("list", length = 6)
-for (i in 1:6) {
-  psv_test <- psv(indopacific_mat[[i]], indopacific_tree)
-  psv_test_list[[i]] <- psv_test
-}
-
-load('./data/raster/indopacific_list.Rdata')
-pdf('./figures/indopacific_psv.pdf')
-indopacific_psv <- vector("list", length = 6)
-for (i in 1:6) {
-  psv_raster <- indopacific_list[[i]]
-  psv_raster@data@values <- psv_test_list[[i]]$PSVs
-  plot(psv_raster)
-  indopacific_psv[[i]] <- psv_raster
-}
-dev.off()
-
 save(indopacific_psv, file = './data/raster/indopacific_psv.Rdata')  
 load('./data/raster/indopacific_psv.Rdata')
 
@@ -372,7 +205,7 @@ maxlik.betasplit(trop_atlantic_tree, confidence.interval = "profile")
 
 # beta for trop atlantic = -0.97, conf interval -0.61 to -1.25
 plot(trop_atlantic_tree)
-identify.phylo(trop_atlantic_tree)
+#identify.phylo(trop_atlantic_tree)
 trop_atlantic_tree <- root(trop_atlantic_tree, outgroup = 128, resolve.root = T)
 
 is.rooted(indopacific_tree)
@@ -386,9 +219,11 @@ load('./data/raster/temp_list.Rdata')
 
 trop_atlantic_temp <- realm_crop(temp_list, tropical_atlantic)
 save(trop_atlantic_temp, file = './data/raster/trop_atlantic_temp.Rdata')
+load('./data/raster/trop_atlantic_temp.Rdata')
 
 indopacific_temp <- realm_crop(temp_list, central_indopacific)
 save(indopacific_temp, file = './data/raster/indopacific_temp.Rdata')
+load('./data/raster/indopacific_temp.Rdata')
 
 
 # data analysis
@@ -405,7 +240,11 @@ for (i in 1:6) {
                      "tropical_atlantic_temperature")
   data_list_trop[[i]] <- dat
 }
-save(data_list_trop, file = "data/raster/data_list_trop.Rdata")
+# disaggregating list into dataframe
+total_df_trop <- dplyr::bind_rows(data_list_trop, .id = 'scale')
+# remove rows when richness is zero
+total_df_trop <- subset(total_df_trop, tropical_atlantic_richness != 0)
+save(total_df_trop, file = "data/raster/total_df_trop.Rdata")
 
 
 data_list_indo <- vector("list", length = 6)
@@ -420,91 +259,44 @@ for (i in 1:6) {
                      "indopacific_richness", "indopacific_mrd", "indopacifc_psv", "indopacific_temperature")
   data_list_indo[[i]] <- dat
 }
-save(data_list_indo, file = './data/raster/data_list_indo.Rdata')
-
-# make_plot function plots two variables against one another
-# x = x axis variable, must be chosen from data_list, in character form
-# y = y axis variable, must be chosen from data_list, in character form
-# z = x axis label as character string
-# w = y axis label as character string
-# v = pdf file
-# output are statistics summary, name and save accordingly
-make_plot_trop <- function(x, y, z, w, v) {
-  load('./data/raster/data_list_trop.Rdata')
-  load('./data/raster/trop_atlantic_list.Rdata')
-  stats <- vector("list", length = 6)
-  pdf(v)
-  for (i in 1:6) {
-    column1 <- substitute(x)
-    column2 <- substitute(y)
-    lin <- lm(eval(column2, data_list_trop[[1]]) ~ eval(column1, data_list_trop[[1]])) 
-    plot(eval(column1, data_list_trop[[i]]), eval(column2, data_list_trop[[i]]), 
-         main = paste('resolution =', res(trop_atlantic_list[[i]])), 
-         xlab = z, ylab = w)
-    abline(lin, col = 'red')
-    stats[[i]] <- summary(lin)
-  }
-  dev.off()
-  return(stats)
-} 
-
-
-# make_plot function plots two variables against one another
-# x = x axis variable, must be chosen from data_list, in character form
-# y = y axis variable, must be chosen from data_list, in character form
-# z = x axis label as character string
-# w = y axis label as character string
-# v = pdf file
-# output are statistics summary, name and save accordingly
-make_plot_indo <- function(x, y, z, w, v) {
-  load('./data/raster/data_list_indo.Rdata')
-  load('./data/raster/indopacific_list.Rdata')
-  stats <- vector("list", length = 6)
-  pdf(v)
-  for (i in 1:6) {
-    column1 <- substitute(x)
-    column2 <- substitute(y)
-    lin <- lm(eval(column2, data_list_indo[[i]]) ~ eval(column1, data_list_indo[[i]])) 
-    plot(eval(column1, data_list_indo[[i]]), eval(column2, data_list_indo[[i]]), 
-         main = paste('resolution =', res(indopacific_list[[i]])), 
-         xlab = z, ylab = w)
-    abline(lin, col = 'red')
-    stats[[i]] <- summary(lin)
-  }
-  dev.off()
-  return(stats)
-}
+# disaggregating list into dataframe
+total_df_indo <- dplyr::bind_rows(data_list_indo, .id = 'scale')
+# remove rows when richness is zero
+total_df_indo <- subset(total_df_indo, indopacific_richness != 0)
+save(total_df_indo, file = "data/raster/total_df_indo.Rdata")
 
 # regressions for tropical atlantic
-trop_atlantic_richnessVtemp <- make_plot_trop(tropical_atlantic_temperature, tropical_atlantic_richness, 
+trop_atlantic_richnessVtemp <- make_plot(total_df_trop, 'tropical_atlantic_temperature', 'tropical_atlantic_richness', 
                                               "Temperature (°C)", "Tropical Atlantic Richness", 
                                               './figures/trop_atlantic_vs_temp.pdf')
 save(trop_atlantic_richnessVtemp, file = './data/stats/trop_atlantic_richnessVtemp.Rdata')
 
-trop_atlantic_richnessVmrd <- make_plot_trop(tropical_atlantic_mrd, tropical_atlantic_richness,
-                                             "Mean Root Distance (MRD) Tropical Atlantic", 
+trop_atlantic_richnessVmrd <- make_plot(total_df_trop, 'tropical_atlantic_richness', 'tropical_atlantic_mrd',
                                              "Tropical Atlantic Richness", 
+                                             "Mean Root Distance (MRD) Tropical Atlantic",
                                              './figures/trop_atlantic_mrd_vs_richness.pdf')
 save(trop_atlantic_richnessVmrd, file = './data/stats/trop_atlantic_richnessVmrd.Rdata')
 
-trop_atlantic_tempVmrd <- make_plot_trop(tropical_atlantic_temperature, tropical_atlantic_mrd, 
+trop_atlantic_tempVmrd <- make_plot(total_df_trop, 'tropical_atlantic_temperature', 'tropical_atlantic_mrd', 
                                          "Temperature (°C)", "Mean Root Distance (MRD) Tropical Atlantic",
                                          './figures/trop_atlantic_temp_vs_mrd.pdf')  
 save(trop_atlantic_tempVmrd, file = './data/stats/trop_atlantic_tempVmrd.Rdata')
 
 # regressions for indopacific
-indopacific_richnessVtemp <- make_plot_indo(indopacific_temperature, indopacific_richness, 
+indopacific_richnessVtemp <- make_plot(total_df_indo, 'indopacific_temperature', 'indopacific_richness', 
                                                 "Temperature (°C)", "Central Indopacific Richness",
                                                 './figures/indopacific_richness_vs_temp.pdf')
 save(indopacific_richnessVtemp, file = './data/stats/indopacific_richnessVtemp.Rdata')
 
-indopacific_richnessVmrd <- make_plot_indo(indopacific_mrd, indopacific_richness, 
-                                           "Mean Root Distance (MRD) Central Indopacific", 
+indopacific_richnessVmrd <- make_plot(total_df_indo, 'indopacific_richness', 'indopacific_mrd',
                                            "Central Indopaific Richness", 
+                                           "Mean Root Distance (MRD) Central Indopacific", 
                                            './figures/indopacific_mrd_vs_richness.pdf')
 save(indopacific_richnessVmrd, file = './data/stats/indopacific_richnessVmrd.Rdata')
 
-indopacific_tempVmrd <- make_plot_indo(indopacific_temperature, indopacific_mrd, "Temperature (°C)",
+indopacific_tempVmrd <- make_plot(total_df_indo, 'indopacific_temperature', 'indopacific_mrd', "Temperature (°C)",
                                        "Mean Root Distance (MRD) Central Indopacific",
                                        './figures/indopacific_temp_vs_mrd.pdf')
 save(indopacific_tempVmrd, file = './data/stats/indopacific_tempVmrd.Rdata')
+
+

@@ -1,3 +1,5 @@
+rm(list = ls())
+
 library(rgdal)
 library(sp)
 library(raster)
@@ -6,82 +8,10 @@ library(foreach)
 library(maps)
 library(maptools)
 
-# richness rasterize function
-# poly_files = directory where all the shape files are ('./data/polygon')
-# raster_files = directory to be created ('./data/raster/sp')
-# base_raster = raster upon which data will be added
-# wanted_crs = projection the raster will be in
-# output value is a new res_stack, name it and save it accordingly
-load('./data/raster/oceans_raster.Rdata')
-richness_rasterize <- function(poly_files, raster_files, base_raster, wanted_crs) {
-  sp_poly_files <- dir(poly_files)
-  sp_raster_files <- sub("json", "grd", sp_poly_files)
-  sp_raster_files <- sub(" ", "_", sp_raster_files)
-  
-  dir.create(raster_files)
-  
-  cl <- makeCluster(24) 
-  registerDoParallel(cl) 
-  #clusterExport(cl, list('sp_poly_files', 'sp_raster_files'))
-  
-  foreach(i = seq_along(sp_poly_files),
-          .packages = c("raster", "rgdal")) %dopar% {
-            # read in 
-            temp_poly = readOGR(dsn = paste0(poly_files, "/", sp_poly_files[i]),
-                                layer = sub(".json", "", sp_poly_files[i]))
-            # convert projection to cea
-            temp_poly = spTransform(temp_poly, CRS(wanted_crs))
-            # add field that will provide values when rasterized
-            temp_poly@data$occur = 1
-            # rasterize
-            sp_raster = rasterize(temp_poly, base_raster, field = 'occur')
-            writeRaster(sp_raster, 
-                        filename = paste0(raster_files, "/", sp_raster_files[i]),
-                        datatype = "LOG1S", overwrite = TRUE)
-          }
-  stopCluster(cl)
-
-  sp_stack = stack(sapply(sp_raster_files, function(x) 
-    paste0(raster_files, "/", x)))
-  names(sp_stack) = sub('.grd', ' ', names(sp_stack))
-  
-  # create a list of stack at each resultion
-  factor_val <- c(2, 4, 8, 16, 32)
-  res_stack <- lapply(factor_val, function(x) 
-    aggregate(sp_stack, fac = x, fun = sum) > 0)
-  res_stack <- c(sp_stack, res_stack)
-  return(res_stack)
-}
-
-save(richness_rasterize, file = './functions/richness_rasterize.Rdata')
-
-
-# richness_plot function  
-# creating a species richness layer for each resolution
-# res_stack = res_stack created in above function (sp_res_stack)
-# figure_name = file path for pdf ('./figures/species_richness_maps.pdf')
-# mask = continents shapefile
-# output is the richness list, name and save accordingly
-richness_plot <- function(res_stack, figure_name, mask) {
-  richness_list = lapply(res_stack, function(x)
-    calc(x, fun = sum, na.rm = T))
-  
-  pdf(figure_name)
-  for (i in 1:6) {
-    test <- rasterize(mask, richness_list[[i]], getCover = T)
-    richness_list[[i]][values(test) > 0.9] <- NA
-    plot(richness_list[[i]],
-         main=paste('resolution =', res(richness_list[[i]])))
-    plot(continents, add = T, col = "black")
-  }
-  dev.off()
-  return(richness_list)
-}
-
-save(richness_plot, file = './functions/richness_plot.Rdata')
+source('./scripts/all_functions.R')
 
 # Read in continent shapefile for mapping purposes
-load('./data/continent/continent_new')
+load('./data/continent/continent_new.Rdata')
 
 # Taxonomic richness rasterize and plot
 sp_res_stack <- richness_rasterize('./data/polygon', './data/raster/sp', oceans_raster, 
@@ -115,29 +45,7 @@ lam_richness <- richness_plot(lam_res_stack, './figures/Lamniforme_richness.pdf'
 save(lam_richness, file = './data/raster/lam_richness.Rdata')
 load('./data/raster/lam_richness.Rdata')
 
-# enviro_plot function to aggregate and plot environmental variables
-# enviro_raster = environmental raster from initial_cleanup
-# figure_name = file path for pdf
-#mask = continents mask
-# output is raster list, name and save accordingly
-enviro_plot <- function(enviro_raster, figure_name, mask) {
-  factor_val <- c(2, 4, 8, 16, 32)
-  enviro_list <- lapply(factor_val, function (x)
-  aggregate(enviro_raster, fac = x, fun = mean))
-  enviro_list <- c(enviro_raster, enviro_list)
-  return(enviro_list)
-  pdf(figure_name)
-for (i in 1:6) {
-  test <- rasterize(mask, enviro_list[[i]], getCover = T)
-  enviro_list[[i]][values(test) > 0.9] <- NA
-  plot(enviro_list[[i]], main = paste('resolution =', res(enviro_list[[i]])))
-  plot(continents, add = T, col = "black")
-}
-dev.off()
-}
-
-save(enviro_plot, file = './functions/enviro_plot.Rdata')
-
+# Usinf enviro_plot function to rasterize environmental variables
 # temperature plot
 load('./data/raster/temp_raster.Rdata')
 temp_list <- enviro_plot(temp_raster, './figures/temperature.pdf')

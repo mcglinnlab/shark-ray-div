@@ -20,7 +20,7 @@ load('./data/raster/oceans_raster.Rdata')
 # making continents polygon
 continents <- shapefile('./data/continent/continent')
 continents <- spTransform(continents, CRS("+proj=cea +units=km"))
-save(continents, file = './data/continent/continent_new')
+save(continents, file = './data/continent/continent_new.Rdata')
 
 # Enivironmental variables
 # create a temperature raster
