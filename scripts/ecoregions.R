@@ -289,7 +289,7 @@ indopacific_richnessVtemp <- make_plot(total_df_indo, 'indopacific_temperature',
 save(indopacific_richnessVtemp, file = './data/stats/indopacific_richnessVtemp.Rdata')
 
 indopacific_richnessVmrd <- make_plot(total_df_indo, 'indopacific_richness', 'indopacific_mrd',
-                                           "Central Indopaific Richness", 
+                                           "Central Indopacific Richness", 
                                            "Mean Root Distance (MRD) Central Indopacific", 
                                            './figures/indopacific_mrd_vs_richness.pdf')
 save(indopacific_richnessVmrd, file = './data/stats/indopacific_richnessVmrd.Rdata')

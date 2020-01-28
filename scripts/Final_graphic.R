@@ -80,10 +80,10 @@ save(table_list, file = './data/stats/table_list.Rdata')
 gof <- function(x, y) {
   x_sub <- substitute(x)
   y_sub <- substitute(y)
-chi_result <- ((table_list[[4]][eval(y_sub)] - 
-                  table_list[[4]][eval(x_sub)])^2)/table_list[[4]][eval(x_sub)]
-chi_result <- sum(chi_result, na.rm = T)
-print(chi_result)
+res_result <- ((table_list[[4]][eval(y_sub)] - 
+                  table_list[[4]][eval(x_sub)])^2)
+res_result <- sum(res_result, na.rm = T)
+print(res_result)
 }
 
 nctempXg <- gof('Niche_Conservatism_(Temperate)', 'Global_Analysis')
@@ -142,7 +142,7 @@ ggplot() + geom_col(data = new_df, aes(x = model, y = gof_value, fill = model)) 
 dev.off()
 
 # transformed figure
-new_df_trans <- data.frame(analysis, log(abs(gof_value)), model)
+new_df_trans <- data.frame(analysis, abs(gof_value), model)
 colnames(new_df_trans) <- c("analysis", "gof_value", "model")
 new_df_trans$analysis <- factor(new_df_trans$analysis, levels=unique(new_df_trans$analysis))
 
