@@ -75,38 +75,56 @@ for (i in 1:6) {
 save(table_list, file = './data/stats/table_list.Rdata')
 
 # function to get goodness of fit value
-# where x is the expected model
-# where y is the observed result
-gof <- function(x, y) {
-  x_sub <- substitute(x)
-  y_sub <- substitute(y)
+# where pred is the expected model
+# where obs is the observed result
+gof <- function(pred, obs) {
+  pred_sub <- substitute(pred)
+  obs_sub <- substitute(obs)
 res_result <- ((table_list[[4]][eval(y_sub)] - 
                   table_list[[4]][eval(x_sub)])^2)
 res_result <- sum(res_result, na.rm = T)
 print(res_result)
 }
 
+# Function to get r squared between model and data. Function has been checked by hand
+gof <- function(pred, obs, na.rm = F) {
+  pred_sub <- substitute(pred)
+  obs_sub <- substitute(obs)
+  observed <- table_list[[4]][eval(obs_sub)]
+  predicted <- table_list[[4]][eval(pred_sub)]
+    if (na.rm) {
+      true = !(is.na(observed) | is.na(predicted))
+      observed = observed[true]
+      predicted = predicted[true]
+      observed = data.frame(observed)
+    }
+  SSerr = sum((observed - predicted)^2)
+  SStot = sum((observed - mean(observed[,1]))^2)
+  R2 = 1 - SSerr / SStot
+  return(R2)
+}
+
 nctempXg <- gof('Niche_Conservatism_(Temperate)', 'Global_Analysis')
 nctempXc <- gof('Niche_Conservatism_(Temperate)', 'Carcharhiniformes')
-nctempXl <- gof('Niche_Conservatism_(Temperate)', 'Lamniformes')
+nctempXl <- gof('Niche_Conservatism_(Temperate)', 'Lamniformes', na.rm = T)
 nctempXta <- gof('Niche_Conservatism_(Temperate)', 'Tropical_Atlantic')
 nctempXip <- gof('Niche_Conservatism_(Temperate)', 'Central_Indo-Pacific')
 
 nctropXg <- gof('Niche_Conservatism_(Tropical)', 'Global_Analysis')
 nctropXc <- gof('Niche_Conservatism_(Tropical)', 'Carcharhiniformes')
-nctropXl <- gof('Niche_Conservatism_(Tropical)', 'Lamniformes')
+nctropXl <- gof('Niche_Conservatism_(Tropical)', 'Lamniformes', na.rm = T)
 nctropXta <- gof('Niche_Conservatism_(Tropical)', 'Tropical_Atlantic')
 nctropXip <- gof('Niche_Conservatism_(Tropical)', 'Central_Indo-Pacific')
 
 eltempXg <- gof('Ecological_Limits_(Temperate)', 'Global_Analysis')
 eltempXc <- gof('Ecological_Limits_(Temperate)', 'Carcharhiniformes')
-eltempXl <- gof('Ecological_Limits_(Temperate)', 'Lamniformes')
+eltempXl <- gof('Ecological_Limits_(Temperate)', 'Lamniformes', na.rm = T)
 eltempXta <- gof('Ecological_Limits_(Temperate)', 'Tropical_Atlantic')
 eltempXip <- gof('Ecological_Limits_(Temperate)', 'Central_Indo-Pacific')
 
 eltropXg <- gof('Ecological_Limits_(Tropical)', 'Global_Analysis')
 eltropXc <- gof('Ecological_Limits_(Tropical)', 'Carcharhiniformes')
-eltropXl <- gof('Ecological_Limits_(Tropical)', 'Lamniformes')
+eltropXl <- gof('Ecological_Limits_(Tropical)', 'Lamniformes', na.rm = T)
 eltropXta <- gof('Ecological_Limits_(Tropical)', 'Tropical_Atlantic')
 eltropXip <- gof('Ecological_Limits_(Tropical)', 'Central_Indo-Pacific')
 
@@ -129,16 +147,16 @@ colnames(new_df) <- c("analysis", "gof_value", "model")
 new_df$analysis <- factor(new_df$analysis, levels=unique(new_df$analysis))
 
 # untransformed figure
-pdf('./figures/final_figure_no_transformation.pdf')
+pdf('./figures/final_figure_no_transformation.pdf', width = 7*1.5)
 ggplot() + geom_col(data = new_df, aes(x = model, y = gof_value, fill = model)) +
   facet_wrap(~analysis, nrow=1) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
   scale_fill_discrete(name = "Model", labels = c("Ecological Limits (Temperate)", 
                                                  "Ecological Limits (Tropical)",
                                                  "Niche Conservatism (Temperate)",
                                                  "Niche Conservatism (Tropical)")) +
   xlab("Model") +
-  ylab("Goodness of Fit Value")
+  ylab("R Squared Value")
 dev.off()
 
 # transformed figure
