@@ -45,7 +45,32 @@ lam_richness <- richness_plot(lam_res_stack, './figures/Lamniforme_richness.pdf'
 save(lam_richness, file = './data/raster/lam_richness.Rdata')
 load('./data/raster/lam_richness.Rdata')
 
-# Usinf enviro_plot function to rasterize environmental variables
+# dividing each richness raster by its max to standardize the value
+species_richness_standard <- vector("list", length = 6)
+for (i in 1:6) {
+  max_wanted <- max(species_richness[[i]]@data@values, na.rm = T)
+  new_ras <- calc(species_richness[[i]], fun = function(x) x/max_wanted)
+  species_richness_standard[[i]] <- new_ras
+}
+save(species_richness_standard, file = './data/raster/species_richness_standard.Rdata')
+
+car_richness_standard <- vector("list", length = 6)
+for (i in 1:6) {
+  max_wanted <- max(car_richness[[i]]@data@values, na.rm = T)
+  new_ras <- calc(car_richness[[i]], fun = function(x) x/max_wanted)
+  car_richness_standard[[i]] <- new_ras
+}
+save(car_richness_standard, file = './data/raster/car_richness_standard.Rdata')
+
+lam_richness_standard <- vector("list", length = 6)
+for (i in 1:6) {
+  max_wanted <- max(lam_richness[[i]]@data@values, na.rm = T)
+  new_ras <- calc(lam_richness[[i]], fun = function(x) x/max_wanted)
+  lam_richness_standard[[i]] <- new_ras
+}
+save(lam_richness_standard, file = './data/raster/lam_richness_standard.Rdata')
+
+# Using enviro_plot function to rasterize environmental variables
 # temperature plot
 load('./data/raster/temp_raster.Rdata')
 temp_list <- enviro_plot(temp_raster, './figures/temperature.pdf')

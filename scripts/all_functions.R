@@ -258,9 +258,11 @@ beta_runplot <- function(needed_tree, needed_mat, mask, figure_name, raster_base
 #' @param x_lab = x axis label as character string
 #' @param y_lab = y axis label as character string
 #' @param figure_name = pdf file name
-#' output are statistics summary, name and save accordingly
+#' output is a list of vectors for each scale. The first element is the model, 
+#' the second is the slope, the third is the standardized model, 
+#' the fourth is the correlation coefficient, name and save accordingly
 make_plot <- function(dat, x_var, y_var, x_lab, y_lab, figure_path) {
-  stats <- vector("list", length = 6)
+  stats_list <- vector("list", length = 6)
   pdf(figure_path, onefile = TRUE)
   for (i in 1:6) {
     tmp <- subset(dat, scale == i)
@@ -273,8 +275,19 @@ make_plot <- function(dat, x_var, y_var, x_lab, y_lab, figure_path) {
       ylab(y_lab)
     print(p)
     lin <- lm(data = tmp, y ~ x) 
-    stats[[i]] <- summary(lin)
+    stats <- summary(lin)
+    slope <- coef(stats)[2,1]
+    x_std <- scale(x)
+    y_std <- scale(y)
+    mod_std <- lm(y_std ~ x_std)
+    r_value <- coef(mod_std)[2]
+    nest_list <- vector("list", length = 4)
+    nest_list[[1]] <- lin
+    nest_list[[2]] <- slope
+    nest_list[[3]] <- mod_std
+    nest_list[[4]] <- r_value
+    stats_list[[i]] <- nest_list
   }
   dev.off()
-  return(stats)
+  return(stats_list)
 }

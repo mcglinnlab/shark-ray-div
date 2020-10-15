@@ -165,7 +165,7 @@ shark_tree_clean <- multi2di(shark_tree_clean)
 sharkb <- maxlik.betasplit(shark_tree_clean, confidence.interval = "profile")
 sharkb
 
-# beta across shark_tree_clean = -0.9088396
+# beta across shark_tree_clean = -0.8868239 conf: -1.1103004:-0.621985
 
 # Car_tree beta statistic
 plot(car_tree, show.tip.label = F)
@@ -174,7 +174,16 @@ car_tree <- multi2di(car_tree)
 car_b <- maxlik.betasplit(car_tree, confidence.interval = "profile")
 car_b
 
-# beta across Carcharhiniforme subtree = -0.9009455
+# beta across Carcharhiniforme subtree = -0.9441983 conf: -1.2345835:-0.5738432
+
+# Lam_tree beta statistic
+plot(lam_tree, show.tip.label = F)
+is.rooted(lam_tree)
+lam_tree <- multi2di(lam_tree)
+lam_b <- maxlik.betasplit(lam_tree, confidence.interval = "profile")
+lam_b
+
+# beta across Lamniformes subtree = -0.6364018 conf: -2:6.558514
 
 # Applying beta_runplot
 # total species beta_runplot

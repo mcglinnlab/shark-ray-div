@@ -5,9 +5,9 @@ library(raster)
 
 source('./scripts/all_functions.R')
 
-load('./data/raster/species_richness.Rdata')
-load('./data/raster/car_richness.Rdata')
-load('./data/raster/lam_richness.Rdata')
+load('./data/raster/species_richness_standard.Rdata')
+load('./data/raster/car_richness_standard.Rdata')
+load('./data/raster/lam_richness_standard.Rdata')
 load('./data/raster/psv_raster_list.Rdata')
 load('./data/raster/car_psv_list.Rdata')
 load('./data/raster/lam_psv_list.Rdata')
@@ -28,8 +28,8 @@ for (i in 1:6) {
   coo <- sp::coordinates(species_richness[[i]])
   longitude <- coo[,1]
   latitude <- coo[,2]
-  dat <- data.frame(latitude, longitude, values(species_richness[[i]]), 
-                values(car_richness[[i]]), values(lam_richness[[i]]), 
+  dat <- data.frame(latitude, longitude, values(species_richness_standard[[i]]), 
+                values(car_richness_standard[[i]]), values(lam_richness_standard[[i]]), 
                 values(psv_raster_list[[i]]), values(car_psv_list[[i]]), 
                 values(lam_psv_list[[i]]), values(mrd_raster_list[[i]]),
                 values(car_mrd_list[[i]]), values(lam_mrd_list[[i]]),
@@ -66,7 +66,7 @@ load('./data/total_df.Rdata')
 
 #temperature vs total richness
 tempVrichness_stats <- make_plot(total_df, 'temperature', 'total_species_richness', "Temperature (°C)", 
-                                 "Species Richness", './temperature_vs_richness.pdf')
+                                 "Species Richness", './figures/temperature_vs_richness.pdf')
 save(tempVrichness_stats, file = './data/stats/tempVrichness_stats.Rdata')
 load('./data/stats/tempVrichness_stats.Rdata')
 
