@@ -25,8 +25,6 @@ load('./data/stats/sims.Rdata')
 sims$bet[1] <- 0.4
 sims$bet[2] <- 0.4
 
-# for slope
-indopacific_richnessVmrd[[1]][[2]]
 
 # for correlation coefficient
 indopacific_richnessVmrd[[1]][[4]]
@@ -46,19 +44,19 @@ for (i in 1:6) {
   temp_table[3, 1:4] <- sims$energyvmrd
   temp_table[4, 1:4] <- sims$bet
   temp_table[,5] <- c(tempVrichness_stats[[i]][[4]], 
-                      mrdVrichness_stats[[i]][[2]], 
+                      mrdVrichness_stats[[i]][[4]], 
                       tempVmrd_stats[[i]][[4]], -0.8868239)
   temp_table[,6] <- c(tempVcarrichness_stats[[i]][[4]], 
-                      carmrdVcarrichness_stats[[i]][[2]], 
+                      carmrdVcarrichness_stats[[i]][[4]], 
                       tempVcarmrd_stats[[i]][[4]], -0.9441983)
   temp_table[,7] <- c(tempVlamrichness_stats[[i]][[4]], 
-                      lammrdVlamrichness_stats[[i]][[2]], 
+                      lammrdVlamrichness_stats[[i]][[4]], 
                       tempVlammrd_stats[[i]][[4]], -0.6364018)
   temp_table[,8] <- c(trop_atlantic_richnessVtemp[[i]][[4]], 
-                      trop_atlantic_richnessVmrd[[i]][[2]], 
+                      trop_atlantic_richnessVmrd[[i]][[4]], 
                       trop_atlantic_tempVmrd[[i]][[4]], -0.9621481)
   temp_table[,9] <- c(indopacific_richnessVtemp[[i]][[4]], 
-                      indopacific_richnessVmrd[[i]][[2]], 
+                      indopacific_richnessVmrd[[i]][[4]], 
                       indopacific_tempVmrd[[i]][[4]], 
                       -0.8929302)
   temp_table <- data.frame(temp_table)
@@ -70,7 +68,7 @@ for (i in 1:6) {
 save(table_list, file = './data/stats/table_list.Rdata')
 
 # for error bars
-# [1] for slope and [3] for correlation coefficient: upper
+# [3] for correlation coefficient: upper
 confint(mod, "x", level=0.95)[2]
 
 # lower
@@ -89,11 +87,11 @@ for (i in 1:6) {
                       confint(tempVlammrd_stats[[i]][[3]], "x_std", level = 0.95)[2], 
                       confint(trop_atlantic_tempVmrd[[i]][[3]], "x_std", level = 0.95)[2],
                       confint(indopacific_tempVmrd[[i]][[3]], "x_std", level = 0.95)[2], 
-                      confint(mrdVrichness_stats[[i]][[1]], "x", level = 0.95)[2],
-                      confint(carmrdVcarrichness_stats[[i]][[1]], "x", level = 0.95)[2], 
-                      confint(lammrdVlamrichness_stats[[i]][[1]], "x", level = 0.95)[2],
-                      confint(trop_atlantic_richnessVmrd[[i]][[1]], "x", level = 0.95)[2], 
-                      confint(indopacific_richnessVmrd[[i]][[1]], "x", level = 0.95)[2],
+                      confint(mrdVrichness_stats[[i]][[3]], "x", level = 0.95)[2],
+                      confint(carmrdVcarrichness_stats[[i]][[3]], "x", level = 0.95)[2], 
+                      confint(lammrdVlamrichness_stats[[i]][[3]], "x", level = 0.95)[2],
+                      confint(trop_atlantic_richnessVmrd[[i]][[3]], "x", level = 0.95)[2], 
+                      confint(indopacific_richnessVmrd[[i]][[3]], "x", level = 0.95)[2],
                       confint(tempVrichness_stats[[i]][[3]], "x_std", level = 0.95)[2], 
                       confint(tempVcarrichness_stats[[i]][[3]], "x_std", level = 0.95)[2], 
                       confint(tempVlamrichness_stats[[i]][[3]], "x_std", level = 0.95)[2], 
@@ -106,11 +104,11 @@ for (i in 1:6) {
                       confint(tempVlammrd_stats[[i]][[3]], "x_std", level = 0.95)[1], 
                       confint(trop_atlantic_tempVmrd[[i]][[3]], "x_std", level = 0.95)[1],
                       confint(indopacific_tempVmrd[[i]][[3]], "x_std", level = 0.95)[1], 
-                      confint(mrdVrichness_stats[[i]][[1]], "x", level = 0.95)[1],
-                      confint(carmrdVcarrichness_stats[[i]][[1]], "x", level = 0.95)[1], 
-                      confint(lammrdVlamrichness_stats[[i]][[1]], "x", level = 0.95)[1],
-                      confint(trop_atlantic_richnessVmrd[[i]][[1]], "x", level = 0.95)[1], 
-                      confint(indopacific_richnessVmrd[[i]][[1]], "x", level = 0.95)[1],
+                      confint(mrdVrichness_stats[[i]][[3]], "x", level = 0.95)[1],
+                      confint(carmrdVcarrichness_stats[[i]][[3]], "x", level = 0.95)[1], 
+                      confint(lammrdVlamrichness_stats[[i]][[3]], "x", level = 0.95)[1],
+                      confint(trop_atlantic_richnessVmrd[[i]][[3]], "x", level = 0.95)[1], 
+                      confint(indopacific_richnessVmrd[[i]][[3]], "x", level = 0.95)[1],
                       confint(tempVrichness_stats[[i]][[3]], "x_std", level = 0.95)[1], 
                       confint(tempVcarrichness_stats[[i]][[3]], "x_std", level = 0.95)[1], 
                       confint(tempVlamrichness_stats[[i]][[3]], "x_std", level = 0.95)[1], 

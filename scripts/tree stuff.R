@@ -173,6 +173,8 @@ is.rooted(shark_tree_clean)
 is.binary(shark_tree_clean)
 shark_tree_clean <- multi2di(shark_tree_clean)
 
+save(shark_tree_clean, file = './data/shark_tree_clean.Rdata')
+
 # beta statistic
 sharkb <- maxlik.betasplit(shark_tree_clean, confidence.interval = "profile")
 sharkb

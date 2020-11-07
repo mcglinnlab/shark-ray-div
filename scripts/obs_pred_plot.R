@@ -3,6 +3,7 @@ library(ggplot2)
 library(purrr)
 library(dplyr)
 library(wesanderson)
+library(egg)
 
 load('./data/stats/table_list.Rdata')
 load('./data/stats/error_list.Rdata')
@@ -159,25 +160,33 @@ tmp %>%
              scales = "fixed", nrow = 1)
 ggsave('./figures/pred_obs_metrics_global_sepearted.png')
 
-
-
 # obs pred for remainder without global
-out_long2 %>%
+plist <- list()
+plist[[1]] <- tmp %>%
   subset(subset = scale == 4) %>%
   filter(analysis != "Global Analysis") %>%
   ggplot(aes(pred, obs)) +
-  geom_point(aes(col = model, pch = rel, cex = 6), alpha = 0.9) + 
   geom_abline(intercept = 0, slope = 1) +
+  geom_hline(yintercept = 0, lty = 2, col = 'grey') + 
+  geom_vline(xintercept = 0, lty = 2, col = 'grey') +     
   geom_errorbar(aes(ymin=lower_error, ymax=upper_error), width=.05, alpha = 0.5) +
-  scale_color_manual(values = rev(wes_palette("GrandBudapest2"))) +
-  labs(col = "Model", pch = "Metric") +
+  geom_point(aes(col = orig, pch = rel), cex = 2, stroke = 2) + 
+  scale_shape_manual(values = c(15, 16, 17, 18)) +
+  labs(col = "Center of Origin", pch = "Metric") +
+  scale_color_manual(values = c('blue', 'red')) +
+  ylim(-1.5, 1.5) + 
+  xlim(-1.5, 1.5) + 
   xlab("Predicted Values") +
   ylab("Observed Values") +
-  theme(strip.text.x = element_text(size = 12), axis.title.x = element_text(size = 12),
-        axis.title.y = element_text(size = 12), legend.text = element_text(size = 9),
-        legend.title = element_text(size = 10), aspect.ratio = 1.1) +
-  facet_wrap(. ~ analysis, scales = "free", nrow = 1)
-
+  theme_classic() + 
+  theme(strip.background = element_blank(), strip.text = element_text(size = 10),
+        axis.title.x = element_text(size = 14),
+        axis.title.y = element_text(size = 14), legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14), aspect.ratio = 1.1, 
+        panel.spacing = unit(1, "lines")) +
+  facet_wrap(. ~ analysis + hypo, labeller = labeller(hypo = hypo_labs),
+             scales = "fixed", nrow = 4, ncol = 2)
+plist[[1]]
 ggsave('./figures/pred_obs_metrics_rest.pdf')
 
 # Plot for final bar graph
@@ -204,6 +213,7 @@ SSerr_wanted_scale %>%
   geom_col() +
   facet_wrap(~analysis, nrow=1) +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), 
+        axis.line.x = element_blank(),
         strip.text.x = element_text(size = 15), axis.title.x = element_text(size = 14),
         axis.title.y = element_text(size = 14), legend.text = element_text(size = 12),
         legend.title = element_text(size = 14)) +
@@ -220,8 +230,10 @@ SSerr_wanted_scale %>%
   filter(analysis == "Global Analysis") %>%
   ggplot(aes(x = model, y = SSerr, fill = model)) +
   geom_col() +
-  facet_wrap(~analysis) +
-  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), 
+  theme_classic() + 
+  theme(strip.background = element_blank(), strip.text = element_text(size = 10),
+        axis.line.x = element_blank(),
+        axis.text.x = element_blank(), axis.ticks.x = element_blank(), 
         strip.text.x = element_text(size = 30), axis.title.x = element_text(size = 19),
         axis.title.y = element_text(size = 19), legend.text = element_text(size = 18),
         legend.title = element_text(size = 19)) +
@@ -233,19 +245,30 @@ SSerr_wanted_scale %>%
 dev.off()
 
 # bar graph for rest
-pdf('./figures/final_figure_bar_plot_rest.pdf', width = 7*1.5)
-SSerr_wanted_scale %>% 
+pdf('./figures/final_figure_bar_plot_rest.pdf', width = 7*1.75)
+plist[[2]] <- SSerr_wanted_scale %>% 
   filter(analysis != "Global Analysis") %>%
   ggplot(aes(x = model, y = SSerr, fill = model)) +
   geom_col() +
-  facet_wrap(~analysis, nrow=1) +
-  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), 
+  facet_wrap(~ analysis, nrow=1) +
+  theme_classic() + 
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+        axis.line.x = element_blank(),
+        strip.background = element_blank(),
         strip.text.x = element_text(size = 15), axis.title.x = element_text(size = 15),
         axis.title.y = element_text(size = 15), legend.text = element_text(size = 13),
-        legend.title = element_text(size = 15)) +
+        legend.title = element_text(size = 15)) +#,
+      #  panel.spacing = unit(2, "lines")) +
   scale_fill_manual(values = rev(wes_palette("GrandBudapest2")), 
                     name = "Model", labels = c("ELH (Temperate)","ELH (Tropical)",
                                                "NCH (Temperate)","NCH (Tropical)")) +
   xlab("Model") +
   ylab("Mean Sum of Squares Error (MSE)")
+plist[[2]]
 dev.off()
+
+pdf('./figures/final_figure_rest.pdf', width = 7*2.5, height = 7*2)
+egg::ggarrange(plots = plist, ncol = 4, nrow = 2, heights = c(10, .25))
+dev.off()
+
+egg::ggarrange(plist[[1]], plist[[2]], ncol = , nrow = 2, heights = c(20, 10))
