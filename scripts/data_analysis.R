@@ -25,7 +25,7 @@ load('./data/raster/distance_list.Rdata')
 # make an array with everything in it
 data_list <- vector("list", length = 6)
 for (i in 1:6) {
-  coo <- sp::coordinates(species_richness[[i]])
+  coo <- sp::coordinates(species_richness_standard[[i]])
   longitude <- coo[,1]
   latitude <- coo[,2]
   dat <- data.frame(latitude, longitude, values(species_richness_standard[[i]]), 
@@ -77,7 +77,7 @@ save(tempVpsv_stats, file = './data/stats/tempVpsv_stats.Rdata')
 load('./data/stats/tempVpsv_stats.Rdata')
 
 # temperature vs total mrd
-tempVmrd_stats <- make_plot(total_df, 'temperature', 'total_mrd', "Temperature (°C)", "Mean Root Distance",
+tempVmrd_stats <- make_plot(total_df, 'temperature', 'total_mrd', "Temperature (°C)", "Mean Root Distance (MRD)",
                             './figures/temperature_vs_mrd.pdf')
 save(tempVmrd_stats, file = './data/stats/tempVmrd_stats.Rdata')
 load('./data/stats/tempVmrd_stats.Rdata')

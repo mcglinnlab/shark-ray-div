@@ -77,7 +77,7 @@ out_long$lower_error <- as.numeric(as.character(out_long$lower_error))
 out_long2 <- out_long
 out_long2$analysis <- gsub(pattern = "GA", replacement = "Global Analysis", 
                            x = out_long2$analysis)
-out_long2$analysis <- gsub(pattern = "Car", replacement = "Requiem Sharks", 
+out_long2$analysis <- gsub(pattern = "Car", replacement = "Ground Sharks", 
                            x = out_long2$analysis)
 out_long2$analysis <- gsub(pattern = "Lam", replacement = "Mackerel Sharks", 
                            x = out_long2$analysis)
@@ -93,7 +93,7 @@ out_long2$model <- gsub(pattern = "NC_temp", replacement = "NCH (temperate origi
                         x = out_long2$model)
 out_long2$model <- gsub(pattern = "NC_trop", replacement = "NCH (tropical origin)", 
                         x = out_long2$model)
-neworder <- c("Global Analysis", "Requiem Sharks", "Mackerel Sharks", 
+neworder <- c("Global Analysis", "Ground Sharks", "Mackerel Sharks", 
               "Tropical Atlantic", "Central Indo-Pacific")
 out_long2 <- arrange(transform(out_long2,
                                analysis=factor(analysis,levels=neworder)), analysis)
@@ -161,6 +161,7 @@ tmp %>%
 ggsave('./figures/pred_obs_metrics_global_sepearted.png')
 
 # obs pred for remainder without global
+pdf('./figures/pred_obs_metrics_rest.pdf', width = 7*2.5, height = 7*2)
 plist <- list()
 plist[[1]] <- tmp %>%
   subset(subset = scale == 4) %>%
@@ -185,15 +186,16 @@ plist[[1]] <- tmp %>%
         legend.title = element_text(size = 14), aspect.ratio = 1.1, 
         panel.spacing = unit(1, "lines")) +
   facet_wrap(. ~ analysis + hypo, labeller = labeller(hypo = hypo_labs),
-             scales = "fixed", nrow = 4, ncol = 2)
+             scales = "fixed", nrow = 2, ncol = 4)
 plist[[1]]
-ggsave('./figures/pred_obs_metrics_rest.pdf')
+dev.off()
 
-# Plot for final bar graph
+
+# Filter out SSerr for the wanted scale
 SSerr_wanted_scale <- filter(SSerr, scale == 4)
 SSerr_wanted_scale$analysis <- gsub(pattern = "GA", replacement = "Global Analysis", 
                            x = SSerr_wanted_scale$analysis)
-SSerr_wanted_scale$analysis <- gsub(pattern = "Car", replacement = "Requiem Sharks", 
+SSerr_wanted_scale$analysis <- gsub(pattern = "Car", replacement = "Ground Sharks", 
                            x = SSerr_wanted_scale$analysis)
 SSerr_wanted_scale$analysis <- gsub(pattern = "Lam", replacement = "Mackerel Sharks", 
                            x = SSerr_wanted_scale$analysis)
@@ -201,10 +203,28 @@ SSerr_wanted_scale$analysis <- gsub(pattern = "Trop_Atl", replacement = "Tropica
                            x = SSerr_wanted_scale$analysis)
 SSerr_wanted_scale$analysis <- gsub(pattern = "Indo", replacement = "Central Indo-Pacific", 
                            x = SSerr_wanted_scale$analysis)
-neworder <- c("Global Analysis", "Requiem Sharks", "Mackerel Sharks", 
+neworder <- c("Global Analysis", "Ground Sharks", "Mackerel Sharks", 
               "Tropical Atlantic", "Central Indo-Pacific")
 SSerr_wanted_scale <- arrange(transform(SSerr_wanted_scale,
                                         analysis=factor(analysis,levels=neworder)), analysis)
+
+# Transform into table graphic
+glob <- filter(SSerr_wanted_scale, analysis == "Global Analysis")
+glob <- glob$SSerr
+ground <- filter(SSerr_wanted_scale, analysis == "Ground Sharks")
+ground <- ground$SSerr
+mack <- filter(SSerr_wanted_scale, analysis == "Mackerel Sharks")
+mack <- mack$SSerr
+trop <- filter(SSerr_wanted_scale, analysis == "Tropical Atlantic")
+trop <- trop$SSerr
+indo <- filter(SSerr_wanted_scale, analysis == "Central Indo-Pacific")
+indo <- indo$SSerr
+final_table <- data.frame(glob, ground, mack, trop, indo)
+colnames(final_table) <- neworder
+rownames(final_table) <- c("ELH (Temperate)","ELH (Tropical)",
+                           "NCH (Temperate)","NCH (Tropical)")
+write.csv(final_table, './data/final_table_graphic.csv')
+
 
 # bar graph all
 pdf('./figures/final_figure_bar_plot.pdf', width = 7*1.5)

@@ -272,7 +272,9 @@ make_plot <- function(dat, x_var, y_var, x_lab, y_lab, figure_path) {
       geom_point() +
       geom_smooth(method = 'lm') +
       xlab(x_lab) +
-      ylab(y_lab)
+      ylab(y_lab) +
+      theme(axis.title.x = element_text(size = 30), axis.title.y = element_text(size = 30), 
+            axis.text.x = element_text(size = 25), axis.text.y = element_text(size = 25))
     print(p)
     lin <- lm(data = tmp, y ~ x) 
     stats <- summary(lin)
@@ -280,12 +282,15 @@ make_plot <- function(dat, x_var, y_var, x_lab, y_lab, figure_path) {
     x_std <- scale(x)
     y_std <- scale(y)
     mod_std <- lm(y_std ~ x_std)
+    mod_stats <- summary(mod_std)
     r_value <- coef(mod_std)[2]
-    nest_list <- vector("list", length = 4)
+    p_value <- mod_stats$coefficients[2,4]
+    nest_list <- vector("list", length = 5)
     nest_list[[1]] <- lin
     nest_list[[2]] <- slope
     nest_list[[3]] <- mod_std
     nest_list[[4]] <- r_value
+    nest_list[[5]] <- p_value
     stats_list[[i]] <- nest_list
   }
   dev.off()
