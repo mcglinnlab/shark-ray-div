@@ -1,6 +1,10 @@
 # shark-ray-div
 Global patterns of shark and ray diversity
 
+all raw raster data for this project can be downloaded from zenodo here: https://zenodo.org/record/6321610#.YkEfVefMK3A
+
+Naylor, Gavin. (2022). Global Dataset of Shark and Chimaera Ranges [Data set]. Zenodo. https://doi.org/10.5281/zenodo.6321610
+
 Instructions for following the repository
 1.	Simulation
 
