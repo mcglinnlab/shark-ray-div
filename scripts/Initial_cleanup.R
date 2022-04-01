@@ -1,9 +1,11 @@
-# clean and set up data code
 library(rgdal)
 library(sp)
 library(raster)
 library(ncdf4)
 library(R.utils)
+
+# This script is where continent and ocean rasters are made, as well as where 
+# environmental data is read in, formatted, and cleaned
 
 # read in the ocean
 oceans <- readOGR(dsn = "./data/Environment", layer = "ne_10m_ocean")

@@ -7,6 +7,10 @@ library(egg)
 
 load('./data/stats/table_list.Rdata')
 load('./data/stats/error_list.Rdata')
+
+# This script calculates MSE, creates the table graphic as a csv, and creates
+# figure 3
+
 dim(table_list[[1]])
 
 out <- do.call("rbind", table_list)
@@ -16,8 +20,8 @@ error_out <- data.frame(scale = rep(1:6, each = 20), error_out)
 
 # fix column names
 names(out)
-names(out) = c('scale', 'rel', 'NC_temp', 'NC_trop', 'EC_temp', 
-               'EC_trop', 'GA', 'Car', 'Lam', 'Trop_Atl', 'Indo')
+names(out) = c('scale', 'rel', 'NC_trop', 'NC_temp', 'EC_trop', 
+               'EC_temp', 'GA', 'Car', 'Lam', 'Trop_Atl', 'Indo')
 
 out %>%
     ggplot(aes(GA, EC_temp)) + 
@@ -127,11 +131,12 @@ tmp$pred <- tmp$pred + rand
 tmp$hypo <- ifelse(grepl('ELH', tmp$model), 'ELH', 'NCH')    
 tmp$orig <- ifelse(grepl('temperate', tmp$model), 'temperate', 'tropical')
 # fix labels on the variable rel
-tmp$rel <- gsub('Energy Gradient vs MRD', 'temperature vs MRD', tmp$rel)
-tmp$rel <- gsub('Richness vs MRD', 'richness vs MRD', tmp$rel)
-tmp$rel <- gsub('Richness vs Temperature', 'temperature vs richness', tmp$rel)
+tmp$rel <- gsub('Energy Gradient vs MRD', 'temperature vs MRD (r)', tmp$rel)
+tmp$rel <- gsub('Richness vs MRD', 'richness vs MRD (r)', tmp$rel)
+tmp$rel <- gsub('Richness vs Temperature', 'temperature vs richness (r)', tmp$rel)
+tmp$rel <- gsub('Beta', 'tree symmetry (β)', tmp$rel)
 # fix labels on the hypo
-hypo_labs <- c("Energy Limits Hypothesis", "Niche Conservatism Hypothesis") 
+hypo_labs <- c("Energy Limits", "Niche Conservatism") 
 names(hypo_labs) <- c("ELH", "NCH")
 
 tmp %>%
@@ -144,10 +149,10 @@ tmp %>%
   geom_errorbar(aes(ymin=lower_error, ymax=upper_error), width=.05, alpha = 0.5) +
   geom_point(aes(col = orig, pch = rel), cex = 2, stroke = 2) + 
   scale_shape_manual(values = c(15, 16, 17, 18)) +
-  labs(col = "Center of Origin", pch = "Metric") +
+  labs(col = "Center of Origin", pch = "Pattern (metric used)") +
   scale_color_manual(values = c('blue', 'red')) +
-  ylim(-1.5, 1.5) + 
-  xlim(-1.5, 1.5) + 
+  ylim(-1.35, 1.35) + 
+  xlim(-1.35, 1.35) + 
   xlab("Predicted Values") +
   ylab("Observed Values") +
   theme_classic() + 
@@ -158,7 +163,7 @@ tmp %>%
         panel.spacing = unit(1, "lines")) +
   facet_wrap(. ~ hypo, labeller = labeller(hypo = hypo_labs),
              scales = "fixed", nrow = 1)
-ggsave('./figures/pred_obs_metrics_global_sepearted.png')
+ggsave('./figures/figure3.png')
 
 # obs pred for remainder without global
 pdf('./figures/pred_obs_metrics_rest.pdf', width = 7*2.5, height = 7*2)
@@ -180,7 +185,7 @@ plist[[1]] <- tmp %>%
   xlab("Predicted Values") +
   ylab("Observed Values") +
   theme_classic() + 
-  theme(strip.background = element_blank(), strip.text = element_text(size = 10),
+  theme(strip.background = element_blank(), strip.text = element_text(size = 14),
         axis.title.x = element_text(size = 14),
         axis.title.y = element_text(size = 14), legend.text = element_text(size = 12),
         legend.title = element_text(size = 14), aspect.ratio = 1.1, 
