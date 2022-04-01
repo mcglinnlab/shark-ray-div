@@ -2,12 +2,18 @@ rm(list = ls())
 
 library(sp)
 library(raster)
+library(gridExtra)
+library(egg)
 
 source('./scripts/all_functions.R')
 
-load('./data/raster/species_richness_standard.Rdata')
-load('./data/raster/car_richness_standard.Rdata')
-load('./data/raster/lam_richness_standard.Rdata')
+# This script uses the make_plot function in the all_functions script to generate
+# individual plots, and the make_plot_fig2 function to generate plots for figure 2,
+# which is generated in this script
+
+load('./data/raster/species_richness.Rdata')
+load('./data/raster/car_richness.Rdata')
+load('./data/raster/lam_richness.Rdata')
 load('./data/raster/psv_raster_list.Rdata')
 load('./data/raster/car_psv_list.Rdata')
 load('./data/raster/lam_psv_list.Rdata')
@@ -21,15 +27,16 @@ load('./data/raster/chloro_list.Rdata')
 load('./data/raster/salinity_list.Rdata')
 load('./data/raster/area_list.Rdata')
 load('./data/raster/distance_list.Rdata')
+load('./data/shark_tree_gg.Rdata')
 
 # make an array with everything in it
 data_list <- vector("list", length = 6)
 for (i in 1:6) {
-  coo <- sp::coordinates(species_richness_standard[[i]])
+  coo <- sp::coordinates(species_richness[[i]])
   longitude <- coo[,1]
   latitude <- coo[,2]
-  dat <- data.frame(latitude, longitude, values(species_richness_standard[[i]]), 
-                values(car_richness_standard[[i]]), values(lam_richness_standard[[i]]), 
+  dat <- data.frame(latitude, longitude, values(species_richness[[i]]), 
+                values(car_richness[[i]]), values(lam_richness[[i]]), 
                 values(psv_raster_list[[i]]), values(car_psv_list[[i]]), 
                 values(lam_psv_list[[i]]), values(mrd_raster_list[[i]]),
                 values(car_mrd_list[[i]]), values(lam_mrd_list[[i]]),
@@ -492,3 +499,21 @@ lampsvVlamrichness_stats <- make_plot(total_df, 'lamniforme_psv',
 save(lampsvVlamrichness_stats, file = './data/stats/lampsvVlamrichness_stats.Rdata')
 load('./data/stats/lampsvVlamrichness_stats.Rdata')
 
+# individual plots for figure 2 graphic
+tempVrichness <- make_plot_fig2(total_df, 'temperature', 'total_species_richness', 
+                                 "Temperature (°C)", 
+                                 "Species Richness", 4)
+
+mrdVrichness <- make_plot_fig2(total_df, 'total_species_richness', 'total_mrd',
+                                "Species Richness", "Mean Root Distance (MRD)",
+                                4)
+
+tempVmrd <- make_plot_fig2(total_df, 'temperature', 'total_mrd', "Temperature (°C)", 
+                            "Mean Root Distance (MRD)",
+                            4)
+
+# creating figure 2 graphic
+pdf('./figures/figure2.pdf', height = 15, width = 10)
+ggarrange(tempVrichness, mrdVrichness, tempVmrd, shark_tree_gg, ncol = 1,
+          labels = c("a)", "b)", "c)", "d)"))
+dev.off()
