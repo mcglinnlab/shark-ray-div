@@ -10,6 +10,11 @@ library(maptools)
 
 source('./scripts/all_functions.R')
 
+# This script reads in range polygons, transforms them into rasters, stacks them,
+# and sums them to create richness plots. Environmental rasters are also plotted. 
+# the richness_rasterize, enviro_plot, and richness_plot
+# functions are coded in the all_functions.R script
+
 # Read in continent shapefile for mapping purposes
 load('./data/continent/continent_new.Rdata')
 
@@ -44,31 +49,6 @@ save(lam_res_stack, file = './data/raster/lam_res_stack.Rdata')
 lam_richness <- richness_plot(lam_res_stack, './figures/Lamniforme_richness.pdf', continents)
 save(lam_richness, file = './data/raster/lam_richness.Rdata')
 load('./data/raster/lam_richness.Rdata')
-
-# dividing each richness raster by its max to standardize the value
-species_richness_standard <- vector("list", length = 6)
-for (i in 1:6) {
-  max_wanted <- max(species_richness[[i]]@data@values, na.rm = T)
-  new_ras <- calc(species_richness[[i]], fun = function(x) x/max_wanted)
-  species_richness_standard[[i]] <- new_ras
-}
-save(species_richness_standard, file = './data/raster/species_richness_standard.Rdata')
-
-car_richness_standard <- vector("list", length = 6)
-for (i in 1:6) {
-  max_wanted <- max(car_richness[[i]]@data@values, na.rm = T)
-  new_ras <- calc(car_richness[[i]], fun = function(x) x/max_wanted)
-  car_richness_standard[[i]] <- new_ras
-}
-save(car_richness_standard, file = './data/raster/car_richness_standard.Rdata')
-
-lam_richness_standard <- vector("list", length = 6)
-for (i in 1:6) {
-  max_wanted <- max(lam_richness[[i]]@data@values, na.rm = T)
-  new_ras <- calc(lam_richness[[i]], fun = function(x) x/max_wanted)
-  lam_richness_standard[[i]] <- new_ras
-}
-save(lam_richness_standard, file = './data/raster/lam_richness_standard.Rdata')
 
 # Using enviro_plot function to rasterize environmental variables
 # temperature plot
