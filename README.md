@@ -10,12 +10,12 @@ Chlorophyll data was retrived from NASA Earth Observatory: https://neo.sci.gsfc.
 All other environmental variables were retrieved from NOAA's World Ocean Database: https://www.nodc.noaa.gov/OC5/WOD/pr_wod.html
 
 Instructions for following the repository
-    1.	Simulation
 
-
+     1.	Simulation
+     
         a.	`scripts/Analysis_workflow_local.R`
-    
-          i.	Produces needed simulation results and adapted from Hurlbert and Stegen (2014). We specifically modified this to remove an if else which prevented the beta value for         large trees from being computed. The sim IDs listed in `which.sims` corresponds to the following models:
+        
+          i.	Produces needed simulation results and adapted from Hurlbert and Stegen (2014). We specifically modified this to remove an if else which prevented the beta value for large trees from being computed. The sim IDs listed in `which.sims` corresponds to the following models:
       
           ii.	3465:3474 = Niche Conservatism Tropical Origin
       
@@ -31,14 +31,13 @@ Instructions for following the repository
       
     2.	Shark analysis
 
-
         a.	`scripts/Initial_cleanup.R`
     
           i.	Where all environmental rasters are read in, created, and cleaned
       
         b.	`scripts/Rasterize_polygons.R`
     
-          i.	Where range map polygons are read in, transformed into rasters, stacked, and summed to create richness maps and rasters of species richness for the global analysis,         the subclade analysis, and an IUCN test case
+          i.	Where range map polygons are read in, transformed into rasters, stacked, and summed to create richness maps and rasters of species richness for the global analysis, the subclade analysis, and an IUCN test case
       
           ii.	Environmental rasters are also plotted here
       
@@ -66,7 +65,7 @@ Instructions for following the repository
     
           i.	Realm polygons are pulled in and cleaned
       
-          ii.	All components of the analysis (rasterization, phylogenetic metrics, and data analysis/graphing) are repeated in this script for the Tropical Atlantic and Central           Indo-Pacific realms
+          ii.	All components of the analysis (rasterization, phylogenetic metrics, and data analysis/graphing) are repeated in this script for the Tropical Atlantic and Central Indo-Pacific realms
       
         f.	`scripts/Final_graphic.R`
     
@@ -76,7 +75,7 @@ Instructions for following the repository
       
         g.	`Obs_pred_plot.R`
     
-          i.	MSE is calculated for each analysis and hypothesis combination using the `table_list` of correlation coefficients and beta values and the `error_list` of confidence             intervals
+          i.	MSE is calculated for each analysis and hypothesis combination using the `table_list` of correlation coefficients and beta values and the `error_list` of confidence intervals
       
           ii.	Figure 3 is created here along with other data visualizations describing how close each hypothesis is to fitting the real world data from each analysis
 
