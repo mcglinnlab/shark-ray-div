@@ -15,6 +15,8 @@ library(apTreeshape)
 
 source('./scripts/all_functions.R')
 
+# The entire regional analysis is performed in this script
+
 # creating and transforming realms
 regions <- readOGR(dsn = "./data/continent", layer = "meow_ecos")
 class(regions)
@@ -103,23 +105,6 @@ indopacific_stack <- realm_crop(for_indo_stack, central_indopacific)
 save(indopacific_stack, file = './data/raster/indopacific_stack.Rdata')
 load('./data/raster/indopacific_stack.Rdata')
 
-# creating standardized richness values for ecoregions
-trop_atlantic_standard <- vector("list", length = 6)
-for (i in 1:6) {
-  max_wanted <- max(trop_atlantic_list[[i]]@data@values, na.rm = T)
-  new_ras <- calc(trop_atlantic_list[[i]], fun = function(x) x/max_wanted)
-  trop_atlantic_standard[[i]] <- new_ras
-}
-save(trop_atlantic_standard, file = './data/raster/trop_atlantic_standard.Rdata')
-
-indopacific_standard <- vector("list", length = 6)
-for (i in 1:6) {
-  max_wanted <- max(indopacific_list[[i]]@data@values, na.rm = T)
-  new_ras <- calc(indopacific_list[[i]], fun = function(x) x/max_wanted)
-  indopacific_standard[[i]] <- new_ras
-}
-save(indopacific_standard, file = './data/raster/indopacific_standard.Rdata')
-
 # creating dir for phylogenetic functions
 # Pull_names function to pull out names of species in the realm
 # res_stack = res_stack of raster list wanted
@@ -172,22 +157,10 @@ indopacific_mat <- com_mat('./data/indopacific', indopacific_tree,
 
 trop_atlantic_mrd <- mrd_runplot(trop_atlantic_tree, trop_atlantic_mat, continents, 
                                  './figures/trop_atlantic_mrd.pdf', trop_atlantic_list)
-indopacific_mrd <- mrd_runplot(indopacific_tree, indopacific_mat, continents_indo, 
-                               './figures/indopacific_mrd.pdf', indopacific_list)
-
-# dividing mrd by its max to standardize units
-for (i in 1:6) {
-  max_wanted <- max(trop_atlantic_mrd[[i]]@data@values, na.rm = T)
-  new_ras <- calc(trop_atlantic_mrd[[i]], fun = function(x) x/max_wanted)
-  trop_atlantic_mrd[[i]] <- new_ras
-}
 save(trop_atlantic_mrd, file = './data/raster/trop_atlantic_mrd.Rdata')
 
-for (i in 1:6) {
-  max_wanted <- max(indopacific_mrd[[i]]@data@values, na.rm = T)
-  new_ras <- calc(indopacific_mrd[[i]], fun = function(x) x/max_wanted)
-  indopacific_mrd[[i]] <- new_ras
-}
+indopacific_mrd <- mrd_runplot(indopacific_tree, indopacific_mat, continents_indo, 
+                               './figures/indopacific_mrd.pdf', indopacific_list)
 save(indopacific_mrd, file = './data/raster/indopacific_mrd.Rdata')
 
 # all indo plots still broken
@@ -218,18 +191,18 @@ load('./data/raster/indopacific_psv.Rdata')
 # beta for regions
 is.rooted(trop_atlantic_tree)
 trop_atlantic_tree <- multi2di(trop_atlantic_tree)
-maxlik.betasplit(trop_atlantic_tree, confidence.interval = "profile")
-
-# beta for trop atlantic = -0.9621481, conf interval -0.5981778 to -1.2485749
-plot(trop_atlantic_tree)
 #identify.phylo(trop_atlantic_tree)
 trop_atlantic_tree <- root(trop_atlantic_tree, outgroup = 128, resolve.root = T)
+trop_atlantic_b <- maxlik.betasplit(trop_atlantic_tree, confidence.interval = "profile")
+save(trop_atlantic_b, file = './data/stats/trop_atalantic_b.Rdata')
+
+plot(trop_atlantic_tree)
+
 
 is.rooted(indopacific_tree)
 indopacific_tree <- multi2di(indopacific_tree)
-maxlik.betasplit(indopacific_tree, confidence.interval = "profile")
-
-# beta for indopacific = -0.8929302, conf interval -0.5615923 to -1.1603735
+indo_pacific_b <- maxlik.betasplit(indopacific_tree, confidence.interval = "profile")
+save(indo_pacific_b, file = './data/stats/indo_pacific_b.Rdata')
 
 # energy gradient for regions
 load('./data/raster/temp_list.Rdata')
@@ -249,7 +222,7 @@ for (i in 1:6) {
   coo_trop <- coordinates(trop_atlantic_list[[i]])
   longitude_trop <- coo_trop[,1]
   latitude_trop <- coo_trop[,2]
-  dat <- data.frame(longitude_trop, latitude_trop, values(trop_atlantic_standard[[i]]), 
+  dat <- data.frame(longitude_trop, latitude_trop, values(trop_atlantic_list[[i]]), 
                     values(trop_atlantic_mrd[[i]]), values(trop_atlantic_psv[[i]]), 
                     values(trop_atlantic_temp[[i]]))
   colnames(dat) <- c("tropical_atlantic_longitude", "tropical_atlantic_latitude", 
@@ -270,7 +243,7 @@ for (i in 1:6) {
   longitude_indo <- coo_indo[,1]
   latitude_indo <- coo_indo[,2]
   dat <- data.frame(longitude_indo, latitude_indo,
-                    values(indopacific_standard[[i]]), values(indopacific_mrd[[i]]),
+                    values(indopacific_list[[i]]), values(indopacific_mrd[[i]]),
                     values(indopacific_psv[[i]]), values(indopacific_temp[[i]]))
   colnames(dat) <- c("indopacific_longitude", "indopacific_latitude",
                      "indopacific_richness", "indopacific_mrd", "indopacifc_psv", "indopacific_temperature")
