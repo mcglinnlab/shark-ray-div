@@ -5,6 +5,10 @@ all raw raster data for this project can be downloaded from zenodo here: https:/
 
 Naylor, Gavin. (2022). Global Dataset of Shark and Chimaera Ranges [Data set]. Zenodo. https://doi.org/10.5281/zenodo.6321610
 
+Chlorophyll data was retrived from NASA Earth Observatory: https://neo.sci.gsfc.nasa.gov/view.php?datasetId=MY1DMM_CHLORA
+
+All other environmental variables were retrieved from NOAA's World Ocean Database: https://www.nodc.noaa.gov/OC5/WOD/pr_wod.html
+
 Instructions for following the repository
 1.	Simulation
 
