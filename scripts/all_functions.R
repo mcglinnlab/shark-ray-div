@@ -8,12 +8,12 @@ library(ggplot2)
 # Final_graphic.R
 
 # functions for rasterization:
-# richness rasterize function
-# poly_files = directory where all the shape files are ('./data/polygon')
-# raster_files = directory to be created ('./data/raster/sp')
-# base_raster = raster upon which data will be added
-# wanted_crs = projection the raster will be in
-# output value is a new res_stack, name it and save it accordingly
+#' richness rasterize function
+#' @param poly_files = directory where all the shape files are ('./data/polygon')
+#' @param raster_files = directory to be created ('./data/raster/sp')
+#' @param base_raster = raster upon which data will be added
+#' @param wanted_crs = projection the raster will be in
+#' output value is a new res_stack, name it and save it accordingly
 load('./data/raster/oceans_raster.Rdata')
 richness_rasterize <- function(poly_files, raster_files, base_raster, wanted_crs) {
   sp_poly_files <- dir(poly_files)
@@ -56,11 +56,11 @@ richness_rasterize <- function(poly_files, raster_files, base_raster, wanted_crs
 }
 
 # richness_plot function  
-# creating a species richness layer for each resolution
-# res_stack = res_stack created in above function (sp_res_stack)
-# figure_name = file path for pdf ('./figures/species_richness_maps.pdf')
-# mask = continents shapefile
-# output is the richness list, name and save accordingly
+#' creating a species richness layer for each resolution
+#' @param res_stack = res_stack created in above function (sp_res_stack)
+#' @param figure_name = file path for pdf ('./figures/species_richness_maps.pdf')
+#' @param mask = continents shapefile
+#' output is the richness list, name and save accordingly
 richness_plot <- function(res_stack, figure_name, mask) {
   richness_list = lapply(res_stack, function(x)
     calc(x, fun = sum, na.rm = T))
@@ -78,10 +78,10 @@ richness_plot <- function(res_stack, figure_name, mask) {
 }
 
 # enviro_plot function to aggregate and plot environmental variables
-# enviro_raster = environmental raster from initial_cleanup
-# figure_name = file path for pdf
-#mask = continents mask
-# output is raster list, name and save accordingly
+#' @param enviro_raster = environmental raster from initial_cleanup
+#' @param figure_name = file path for pdf
+#' @param mask = continents mask
+#' output is raster list, name and save accordingly
 enviro_plot <- function(enviro_raster, figure_name, mask) {
   factor_val <- c(2, 4, 8, 16, 32)
   enviro_list <- lapply(factor_val, function (x)
@@ -100,7 +100,8 @@ enviro_plot <- function(enviro_raster, figure_name, mask) {
 
 # functions for phylogenetic metrics:
 # mini_tree function to make subtrees based on clades
-# poly_dir = file directory to species polygons
+#' @param poly_dir = file directory to species polygons
+#' returns a subset tree of shark_tree_clean
 mini_tree <- function(poly_dir) {
   names_poly <- dir(poly_dir)
   names_poly <- sub(pattern = '.json', "", names_poly)
@@ -111,10 +112,10 @@ mini_tree <- function(poly_dir) {
 }
 
 # com_mat function makes community matrix for phylogenetic diversity
-# poly_dir = file directory of species
-# needed_tree = clade tree
-# res_stack = res_stack of clade
-# output value is community matrix for specified clade, name accordingly
+#' @param poly_dir = file directory of species
+#' @param needed_tree = clade tree
+#' @param res_stack = res_stack of clade
+#' output value is community matrix for specified clade, name accordingly
 com_mat <- function(poly_dir, needed_tree, res_stack) {
   names_poly <- dir(poly_dir)
   names_poly <- sub(pattern = '.json', "", names_poly)
@@ -137,11 +138,11 @@ com_mat <- function(poly_dir, needed_tree, res_stack) {
 }
 
 # mrd_runplot function for mean root distance
-# needed_tree = clade tree
-# needed_mat = community matrix for clade
-# mask = continents
-# figure_name = file name for pdf
-# raster_base = empty raster to be filled
+#' @param needed_tree = clade tree
+#' @param needed_mat = community matrix for clade
+#' @param mask = continents
+#' @param figure_name = file name for pdf
+#' @param raster_base = empty raster to be filled
 # output value is the mrd raster list, name and save accordingly
 load('./data/raster/species_richness.Rdata')
 load('./data/continent/continent_new.Rdata')
@@ -181,11 +182,11 @@ mrd_runplot <- function(needed_tree, needed_mat, mask, figure_name, raster_base)
 }
 
 # psv_runplot function for phylogenetic species diversity 
-# needed_tree = clade tree
-# needed_mat = community matrix for clade
-# mask = continents mask
-# figure_name = pdf file
-# raster_base = empty raster to be filled
+#' @param needed_tree = clade tree
+#' @param needed_mat = community matrix for clade
+#' @param mask = continents mask
+#' @param figure_name = pdf file
+#' @param raster_base = empty raster to be filled
 # output is raster list, name and save accordingly
 psv_runplot <- function(needed_tree, needed_mat, mask, figure_name, raster_base) {
   psv_test_list <- vector("list", length = 6)
@@ -210,12 +211,11 @@ psv_runplot <- function(needed_tree, needed_mat, mask, figure_name, raster_base)
 }
 
 # beta_runplot
-# can only be applied to total and carcharhiniformes, lamniformes are too unstable
-# needed_tree = clade tree
-# needed_mat = community matrix
-# mask = continents mask
-# figure_name = pdf file
-# raster_base = empty raster to be filled
+#' @param needed_tree = clade tree
+#' @param needed_mat = community matrix
+#' @param mask = continents mask
+#' @param figure_name = pdf file
+#' @param raster_base = empty raster to be filled
 # output is beta raster list, name and save accordingly
 beta_runplot <- function(needed_tree, needed_mat, mask, figure_name, raster_base) {
   beta_list <- vector("list", length = length(needed_mat))
@@ -273,8 +273,8 @@ make_plot <- function(dat, x_var, y_var, x_lab, y_lab, figure_path) {
       geom_smooth(method = 'lm') +
       xlab(x_lab) +
       ylab(y_lab) +
-      theme(axis.title.x = element_text(size = 30), axis.title.y = element_text(size = 30), 
-            axis.text.x = element_text(size = 25), axis.text.y = element_text(size = 25))
+      theme(axis.title.x = element_text(size = 12), axis.title.y = element_text(size = 12), 
+            axis.text.x = element_text(size = 10), axis.text.y = element_text(size = 10))
     print(p)
     lin <- lm(data = tmp, y ~ x) 
     stats <- summary(lin)
@@ -295,4 +295,31 @@ make_plot <- function(dat, x_var, y_var, x_lab, y_lab, figure_path) {
   }
   dev.off()
   return(stats_list)
+}
+
+# make_plot_fig2 function to create gg objects for grid.arrange to make figure 2
+#' @param dat = data frame from which variables are pulled
+#' @param x_var = x axis variable, in character form
+#' @param y_var = y axis variable, in character form
+#' @param x_lab = x axis label as character string
+#' @param y_lab = y axis label as character string
+#' @param scale_num = number from 1 to 6 identifying which resolution to generate a plot for
+#' output value is a ggplot
+make_plot_fig2 <- function(dat, x_var, y_var, x_lab, y_lab, scale_num) {
+    tmp <- subset(dat, scale == scale_num)
+    x = eval(parse(text = paste0('tmp$', x_var)))
+    y = eval(parse(text = paste0('tmp$', y_var)))
+    p <- ggplot(tmp, mapping = aes(x,y)) +
+      geom_point() +
+      geom_smooth(method = 'lm') +
+      xlab(x_lab) +
+      ylab(y_lab) +
+      theme_classic() +
+      theme(axis.title.x = element_text(size = 12), 
+            axis.title.y = element_text(size = 12), 
+            axis.text.x = element_text(size = 10), 
+            axis.text.y = element_text(size = 10),
+            legend.position = "none",
+            aspect.ratio = 1)
+    print(p)
 }
