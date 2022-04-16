@@ -9,6 +9,8 @@ Chlorophyll data was retrived from NASA Earth Observatory: https://neo.sci.gsfc.
 
 All other environmental variables were retrieved from NOAA's World Ocean Database: https://www.nodc.noaa.gov/OC5/WOD/pr_wod.html
 
+Hurlbert and Stegen (2014) simulation code: https://doi.org/10.5281/zenodo.5523198
+
 ## Instructions for recreating analysis
 
 1. Simulation
@@ -20,6 +22,15 @@ All other environmental variables were retrieved from NOAA's World Ocean Databas
             + 3565:3574 = Niche Conservatism Temperate Origin
             + 4065:4074 = Ecological Limits Tropical Origin
             + 4075:4084 = Ecological Limits Temperate Origin
+        This script sources the following scripts and data files, all of which were copied from the above Zenodo link:
+            + `./scripts/reg_calc_and_analysis.r`
+            + `./scripts/make.phylo.jimmy.fun.r`
+            + `./scripts/lat.grad.time.plot.r`
+            + `./scripts/clade.origin.corr.plot.r`
+            + `./scripts/clade.exmpl.figs.r`
+            + `./scripts/extinct.calc.r`
+            + `./scripts/unzipping_files.r`
+            + `./data/SENC_Master_Simulation_Matrix.csv`
     * Code: `./scripts/Graphics.R`
         - Creates the graphics for figure 1. It also creates two data frames, `data/stats/cor_df_sims.Rdata` and `data/stats/p_df_sims.Rdata`,
         which are used for calculating MSE.
